@@ -24,6 +24,9 @@ void readReceiptCallback(Tox *cTox, int32_t friendnumber, uint32_t receipt, void
 void connectionStatusCallback(Tox *cTox, int32_t friendnumber, uint8_t status, void *userdata);
 void avatarInfoCallback(Tox *cTox, int32_t friendnumber, uint8_t format, uint8_t *hash, void *userdata);
 void avatarDataCallback(Tox *cTox, int32_t friendnumber, uint8_t format, uint8_t *hash, uint8_t *data, uint32_t datalen, void *userdata);
+void fileSendRequestCallback(Tox *, int32_t, uint8_t, uint64_t, const uint8_t *, uint16_t, void *);
+void fileControlCallback(Tox *, int32_t, uint8_t, uint8_t, uint8_t, const uint8_t *, uint16_t, void *);
+void fileDataCallback(Tox *, int32_t, uint8_t, const uint8_t *, uint16_t, void *);
 
 @interface OCTTox()
 
@@ -69,6 +72,9 @@ void avatarDataCallback(Tox *cTox, int32_t friendnumber, uint8_t format, uint8_t
     tox_callback_connection_status (_tox,  connectionStatusCallback,  (__bridge void *)self);
     tox_callback_avatar_info       (_tox,  avatarInfoCallback,        (__bridge void *)self);
     tox_callback_avatar_data       (_tox,  avatarDataCallback,        (__bridge void *)self);
+    tox_callback_file_send_request (_tox, fileSendRequestCallback, (__bridge void *)self);
+    tox_callback_file_control      (_tox, fileControlCallback,     (__bridge void *)self);
+    tox_callback_file_data         (_tox, fileDataCallback,        (__bridge void *)self);
 
     return self;
 }
@@ -973,6 +979,8 @@ void readReceiptCallback(Tox *cTox, int32_t friendNumber, uint32_t receipt, void
     }
 }
 
+
+
 void connectionStatusCallback(Tox *cTox, int32_t friendNumber, uint8_t cStatus, void *userData)
 {
     OCTTox *tox = (__bridge OCTTox *)(userData);
@@ -1025,4 +1033,10 @@ void avatarDataCallback(Tox *cTox,
         [tox.delegate tox:tox friendAvatarUpdate:data hash:hash friendNumber:friendNumber];
     }
 }
+
+
+
+
+
+
 

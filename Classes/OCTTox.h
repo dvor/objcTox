@@ -388,6 +388,7 @@ extern const NSUInteger kOCTToxPublicKeyLength;
  */
 - (NSString *)cropString:(NSString *)string toFitType:(OCTToxCheckLengthType)type;
 
+
 /**
  * Maximum length of data for certain type.
  *
@@ -395,6 +396,7 @@ extern const NSUInteger kOCTToxPublicKeyLength;
  *
  * @return Maximum length of data.
  */
+
 - (NSUInteger)maximumDataLengthForType:(OCTToxDataLengthType)type;
 
 @end
