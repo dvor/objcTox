@@ -24,9 +24,13 @@ void readReceiptCallback(Tox *cTox, int32_t friendnumber, uint32_t receipt, void
 void connectionStatusCallback(Tox *cTox, int32_t friendnumber, uint8_t status, void *userdata);
 void avatarInfoCallback(Tox *cTox, int32_t friendnumber, uint8_t format, uint8_t *hash, void *userdata);
 void avatarDataCallback(Tox *cTox, int32_t friendnumber, uint8_t format, uint8_t *hash, uint8_t *data, uint32_t datalen, void *userdata);
-void fileSendRequestCallback(Tox *, int32_t, uint8_t, uint64_t, const uint8_t *, uint16_t, void *);
-void fileControlCallback(Tox *, int32_t, uint8_t, uint8_t, uint8_t, const uint8_t *, uint16_t, void *);
-void fileDataCallback(Tox *, int32_t, uint8_t, const uint8_t *, uint16_t, void *);
+
+
+void fileSendRequestCallback(Tox *ctox, int32_t friendnumber, uint8_t receive_send, uint8_t filenumber, uint8_t control_type, const uint8_t *data, uint16_t length, void *userdata);
+
+
+
+void fileNewSender(Tox *ctox, int32_t friendnumber, uint64_t filesize, const uint8_t *filename,uint16_t filename_length);
 
 @interface OCTTox()
 
@@ -72,10 +76,8 @@ void fileDataCallback(Tox *, int32_t, uint8_t, const uint8_t *, uint16_t, void *
     tox_callback_connection_status (_tox,  connectionStatusCallback,  (__bridge void *)self);
     tox_callback_avatar_info       (_tox,  avatarInfoCallback,        (__bridge void *)self);
     tox_callback_avatar_data       (_tox,  avatarDataCallback,        (__bridge void *)self);
-    tox_callback_file_send_request (_tox, fileSendRequestCallback, (__bridge void *)self);
-    tox_callback_file_control      (_tox, fileControlCallback,     (__bridge void *)self);
-    tox_callback_file_data         (_tox, fileDataCallback,        (__bridge void *)self);
-
+   tox_callback_file_send_request (_tox, fileSendRequestCallback ,   (__bridge void *)self);
+    tox_new_file_sender              (_tox, fileNewSender ,   (__bridge void *)self );
     return self;
 }
 
@@ -1032,6 +1034,17 @@ void avatarDataCallback(Tox *cTox,
     if ([tox.delegate respondsToSelector:@selector(tox:friendAvatarUpdate:hash:friendNumber:)]) {
         [tox.delegate tox:tox friendAvatarUpdate:data hash:hash friendNumber:friendNumber];
     }
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
+    
 }
 
 
