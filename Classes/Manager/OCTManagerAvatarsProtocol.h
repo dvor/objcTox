@@ -14,8 +14,11 @@
  * Sets avatar for current user.
  *
  * @param avatar Image containing avatar, or nil if you want to remove it.
+ * @param error Pointer to an error object if error with writing directory. 
+ *
+ * @return YES if avatar was saved to path succesfully, NO otherwise.
  */
-- (void)setAvatar:(UIImage *)avatar;
+- (BOOL)setAvatar:(UIImage *)avatar error:(NSError **)error;
 
 /**
  * Returns avatar for current user. If you want just to check if user avatar exist, it would be better to use
