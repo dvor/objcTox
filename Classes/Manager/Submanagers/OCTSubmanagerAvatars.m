@@ -26,14 +26,18 @@ static NSString *const kuserAvatarFileName = @"user_avatar";
     NSString *path = [storage.pathForAvatarsDirectory stringByAppendingPathComponent:kuserAvatarFileName];
     NSFileManager *fileManager = [NSFileManager defaultManager];
 
+    BOOL success = NO;
+
     if ([fileManager fileExistsAtPath:path]) {
-        [fileManager removeItemAtPath:path error:nil];
+        [fileManager removeItemAtPath:path error:error];
+        if (error) {
+            return success;
+        }
     }
 
     OCTTox *tox = [self.dataSource managerGetTox];
     NSData *data = nil;
 
-    BOOL success = false;
     if (avatar) {
         data = [self pngDataFromImage:avatar];
         [fileManager createDirectoryAtPath:[path stringByDeletingLastPathComponent]
