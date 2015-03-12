@@ -20,14 +20,19 @@ static NSString *const kuserAvatarFileName = @"user_avatar";
 
 #pragma mark -  OCTManagerAvatarsProtocol
 
-- (void)setAvatar:(UIImage *)avatar
+- (BOOL)setAvatar:(UIImage *)avatar error:(NSError **)error;
 {
     id <OCTFileStorageProtocol> storage = [self.dataSource managerGetFileStorage];
     NSString *path = [storage.pathForAvatarsDirectory stringByAppendingPathComponent:kuserAvatarFileName];
     NSFileManager *fileManager = [NSFileManager defaultManager];
 
+    BOOL success = NO;
+
     if ([fileManager fileExistsAtPath:path]) {
-        [fileManager removeItemAtPath:path error:nil];
+        [fileManager removeItemAtPath:path error:error];
+        if (error) {
+            return success;
+        }
     }
 
     OCTTox *tox = [self.dataSource managerGetTox];
@@ -38,11 +43,12 @@ static NSString *const kuserAvatarFileName = @"user_avatar";
         [fileManager createDirectoryAtPath:[path stringByDeletingLastPathComponent]
                withIntermediateDirectories:YES
                                 attributes:nil
-                                     error:nil];
-        [data writeToFile:path atomically:NO];
+                                     error:error];
+        success = [data writeToFile:path atomically:NO];
     }
     
     [tox setAvatar:data];
+    return success;
 }
 
 - (UIImage *)avatar

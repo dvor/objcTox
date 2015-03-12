@@ -73,12 +73,13 @@ static NSInteger kMaxDataLength = 16384;
     OCMExpect([self.fileManager createDirectoryAtPath:[path stringByDeletingLastPathComponent]
                           withIntermediateDirectories:YES
                                            attributes:nil
-                                                error:nil]);
+                                                error:[OCMArg anyObjectRef]]);
     OCMExpect([(OCTTox *)self.tox setAvatar:[OCMArg isNotNil]]);
 
     UIImage *image = [self createFakeImage];
 
-    [self.subManagerAvatar setAvatar:image];
+    NSError *error;
+    [self.subManagerAvatar setAvatar:image error:&error];
 
     OCMVerifyAll(self.fileManager);
     OCMVerifyAll(self.tox);
@@ -95,7 +96,8 @@ static NSInteger kMaxDataLength = 16384;
 
     OCMExpect([(OCTTox *)self.tox setAvatar:[OCMArg isNil]]);
 
-    [self.subManagerAvatar setAvatar:nil];
+    NSError *error;
+    [self.subManagerAvatar setAvatar:nil error:&error];
 
     //Verify key objects were called
     OCMVerifyAll(self.fileManager);
