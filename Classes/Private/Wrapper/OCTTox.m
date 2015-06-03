@@ -64,17 +64,18 @@ tox_file_recv_chunk_cb fileReceiveChunkCallback;
 
 #pragma mark -  Lifecycle
 
-- (instancetype)initWithOptions:(OCTToxOptions *)options savedData:(NSData *)data error:(NSError **)error
-{
+- (instancetype)initWithOptions:(OCTToxOptions *)options savedData:(NSData *)data error:(NSError **)error {
     self = [super init];
 
-    if (! self) {
-        return nil;
+    if (! self) 
+    
+    {
+            return nil;
     }
 
-    struct Tox_Options cOptions;
+struct Tox_Options cOptions;
 
-    if (options) {
+    if (          options) {
         DDLogVerbose(@"%@: init with options:\n"
                      @"IPv6Enabled %d\n"
                      @"UDPEnabled %d\n"
