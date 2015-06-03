@@ -48,7 +48,7 @@ FILES="$(find {Classes,objcToxTests,objcToxDemo} -name '*.h' -or -name '*.m')"
 
 if [ "$CHECK" = true ] || [ "$APPLY" = true ]; then
     $UNCRUSTIFY -c uncrustify.cfg  -l OC $OPTIONS $FILES
-    exit 0
+    exit $?
 fi
 
 # Create patch
