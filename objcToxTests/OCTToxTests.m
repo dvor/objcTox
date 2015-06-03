@@ -715,57 +715,6 @@ tox_file_recv_chunk_cb fileReceiveChunkCallback;
     }];
 }
 
-- (void)testFriendRequestCallback
-{
-    [self makeTestCallbackWithCallBlock:^{
-        uint8_t bin[32] = {
-            0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15,
-            0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15
-        };
-
-        friendRequestCallback(NULL, bin, (const uint8_t *)"message", 7, (__bridge void *)self.tox);
-
-    } expectBlock:^(id<OCTToxDelegate> delegate) {
-        NSString *publicKey =
-            @"000102030405060708090A0B0C0D0E0F"
-            @"000102030405060708090A0B0C0D0E0F";
-
-        OCMExpect([self.tox.delegate tox:self.tox friendRequestWithMessage:[OCMArg isEqual:@"message"] publicKey:publicKey]);
-    }];
-}
-
-- (void)testFriendMessageCallback
-{
-    [self makeTestCallbackWithCallBlock:^{
-        friendMessageCallback(NULL, 5, TOX_MESSAGE_TYPE_ACTION, (const uint8_t *)"message", 7, (__bridge void *)self.tox);
-
-    } expectBlock:^(id<OCTToxDelegate> delegate) {
-        OCMExpect([self.tox.delegate tox:self.tox
-                           friendMessage:[OCMArg isEqual:@"message"]
-                                    type:OCTToxMessageTypeAction
-                            friendNumber:5]);
-    }];
-}
-
-- (void)testFileReceiveControlCallback
-{
-    [self makeTestCallbackWithCallBlock:^{
-        fileReceiveControlCallback(NULL, 5, 4, TOX_FILE_CONTROL_PAUSE, (__bridge void *)self.tox);
-
-    } expectBlock:^(id<OCTToxDelegate> delegate) {
-        OCMExpect([self.tox.delegate tox:self.tox fileReceiveControl:OCTToxFileControlPause friendNumber:5 fileNumber:4]);
-    }];
-}
-
-- (void)testFileChunkRequestCallback
-{
-    [self makeTestCallbackWithCallBlock:^{
-        fileChunkRequestCallback(NULL, 5, 4, 300, 150, (__bridge void *)self.tox);
-
-    } expectBlock:^(id<OCTToxDelegate> delegate) {
-        OCMExpect([self.tox.delegate tox:self.tox fileChunkRequestForFileNumber:4 friendNumber:5 position:300 length:150]);
-    }];
-}
 
 - (void)testFileReceiveCallback
 {
