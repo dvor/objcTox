@@ -7,12 +7,22 @@
 //
 
 #import <Foundation/Foundation.h>
-#import <XCTest/XCTest.h>
 
 #import <OCMock/OCMock.h>
 #import "OCTToxAV+Private.h"
 #import "OCTTox+Private.h"
 #import "toxav.h"
+#import "OCTCAsserts.h"
+
+void *refToSelf;
+
+void mocked_toxav_iterate(ToxAV *toxAV);
+uint32_t mocked_toxav_iteration_interval(const ToxAV *toxAV);
+void mocked_toxav_kill(ToxAV *toxAV);
+
+bool mocked_tox_av_call(ToxAV *toxAV, uint32_t friend_number, uint32_t audio_bit_rate, uint32_t video_bit_rate, TOXAV_ERR_CALL *error);
+bool mocked_toxav_call_control(ToxAV *toxAV, uint32_t friend_number, TOXAV_CALL_CONTROL control, TOXAV_ERR_CALL_CONTROL *error);
+
 
 @interface OCTToxAVTests : XCTestCase
 
@@ -27,6 +37,9 @@
 {
     [super setUp];
     // Put setup code here. This method is called before the invocation of each test method in the class.
+
+    refToSelf = (__bridge void *)(self);
+
     self.tox = [[OCTTox alloc] initWithOptions:[OCTToxOptions new] savedData:nil error:nil];
     self.toxAV = [[OCTToxAV alloc] initWithTox:self.tox error:nil];
 }
@@ -34,14 +47,38 @@
 - (void)tearDown
 {
     // Put teardown code here. This method is called after the invocation of each test method in the class.
+
+    refToSelf = NULL;
+
     self.tox = nil;
     self.toxAV = nil;
+
     [super tearDown];
 }
 
 - (void)testInit
 {
     XCTAssertNotNil(self.toxAV);
+}
+
+- (void)testCallFriend
+{
+    _toxav_call = mocked_tox_av_call;
+    XCTAssertTrue([self.toxAV callFriendNumber:1234 audioBitRate:5678 videoBitRate:9101112 error:nil]);
+}
+
+- (void)testSendCallControl
+{
+    _toxav_call_control = mocked_toxav_call_control;
+    XCTAssertTrue([self.toxAV sendCallControl:OCTToxAVCallControlResume toFriendNumber:12345 error:nil]);
+}
+
+- (void)testStart
+{
+    _toxav_iterate = mocked_toxav_iterate;
+    _toxav_iteration_interval = mocked_toxav_iteration_interval;
+
+    [self.tox start];
 }
 
 #pragma mark Private methods
@@ -304,3 +341,52 @@
 }
 
 @end
+
+#pragma mark - Mocked toxav methods
+void mocked_toxav_iterate(ToxAV *cToxAV)
+{
+    OCTToxAV *toxAV = [(__bridge OCTToxAVTests *)refToSelf toxAV];
+
+    CCCAssertTrue(toxAV.toxAV == cToxAV);
+}
+
+uint32_t mocked_toxav_iteration_interval(const ToxAV *cToxAV)
+{
+    OCTToxAV *toxAV = [(__bridge OCTToxAVTests *)refToSelf toxAV];
+
+    CCCAssertTrue(toxAV.toxAV == cToxAV);
+
+    return 200;
+}
+
+void mocked_toxav_kill(ToxAV *cToxAV)
+{
+    OCTToxAV *toxAV = [(__bridge OCTToxAVTests *)refToSelf toxAV];
+
+    CCCAssertTrue(toxAV.toxAV == cToxAV);
+}
+
+bool mocked_tox_av_call(ToxAV *cToxAV, uint32_t friend_number, uint32_t audio_bit_rate, uint32_t video_bit_rate, TOXAV_ERR_CALL *error)
+{
+    OCTToxAV *toxAV = [(__bridge OCTToxAVTests *)refToSelf toxAV];
+
+    CCCAssertTrue(toxAV.toxAV == cToxAV);
+
+    CCCAssertEqual(1234, friend_number);
+    CCCAssertEqual(5678, audio_bit_rate);
+    CCCAssertEqual(9101112, video_bit_rate);
+
+    return true;
+}
+
+bool mocked_toxav_call_control(ToxAV *cToxAV, uint32_t friend_number, TOXAV_CALL_CONTROL control, TOXAV_ERR_CALL_CONTROL *error)
+{
+    OCTToxAV *toxAV = [(__bridge OCTToxAVTests *)refToSelf toxAV];
+
+    CCCAssertTrue(toxAV.toxAV == cToxAV);
+
+    CCCAssertEqual(friend_number, 12345);
+    CCCAssertEqual(control, TOXAV_CALL_CONTROL_RESUME);
+
+    return true;
+}
