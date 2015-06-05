@@ -7,12 +7,47 @@
 //
 
 #import <Foundation/Foundation.h>
-#import <XCTest/XCTest.h>
 
 #import <OCMock/OCMock.h>
 #import "OCTToxAV+Private.h"
 #import "OCTTox+Private.h"
 #import "toxav.h"
+#import "OCTCAsserts.h"
+
+void *refToSelf;
+
+uint32_t mocked_toxav_version_major(void);
+uint32_t mocked_toxav_version_minor(void);
+uint32_t mocked_toxav_version_patch(void);
+bool mocked_toxav_version_is_compatible(uint32_t major, uint32_t minor, uint32_t patch);
+
+void mocked_toxav_iterate(ToxAV *toxAV);
+uint32_t mocked_toxav_iteration_interval(const ToxAV *toxAV);
+void mocked_toxav_kill(ToxAV *toxAV);
+
+bool mocked_tox_av_call_success(ToxAV *toxAV, uint32_t friend_number, uint32_t audio_bit_rate, uint32_t video_bit_rate, TOXAV_ERR_CALL *error);
+bool mocked_tox_av_call_fail(ToxAV *toxAV, uint32_t friend_number, uint32_t audio_bit_rate, uint32_t video_bit_rate, TOXAV_ERR_CALL *error);
+
+bool mocked_toxav_call_control_resume(ToxAV *toxAV, uint32_t friend_number, TOXAV_CALL_CONTROL control, TOXAV_ERR_CALL_CONTROL *error);
+bool mocked_toxav_call_control_cancel(ToxAV *toxAV, uint32_t friend_number, TOXAV_CALL_CONTROL control, TOXAV_ERR_CALL_CONTROL *error);
+
+bool mocked_toxav_audio_bit_rate_set(ToxAV *toxAV, uint32_t friend_number, uint32_t audio_bit_rate, bool force, TOXAV_ERR_SET_BIT_RATE *error);
+bool mocked_toxav_video_bit_rate_set(ToxAV *toxAV, uint32_t friend_number, uint32_t audio_bit_rate, bool force, TOXAV_ERR_SET_BIT_RATE *error);
+
+bool mocked_toxav_audio_send_frame(ToxAV *toxAV, uint32_t friend_number, const int16_t *pcm, size_t sample_count, uint8_t channels, uint32_t sampling_rate, TOXAV_ERR_SEND_FRAME *error);
+bool mocked_toxav_video_send_frame(ToxAV *toxAV, uint32_t friend_number, uint16_t width, uint16_t height, const uint8_t *y, const uint8_t *u, const uint8_t *v, const uint8_t *a, TOXAV_ERR_SEND_FRAME *error);
+
+OCTToxAVPCMData pcmTestData [] = { 5, 6, 7, 8};
+OCTToxAVPCMData *pcmPointer = pcmTestData;
+
+OCTToxAVPlaneData yPlaneTestData [] = {2, 3, 4, 5};
+OCTToxAVPlaneData *yPlanePointer = yPlaneTestData;
+OCTToxAVPlaneData uPlaneTestData [] = {6, 7, 8, 9};
+OCTToxAVPlaneData *uPlanePointer = uPlaneTestData;
+OCTToxAVPlaneData vPlaneTestData [] = {10, 11, 12, 13};
+OCTToxAVPlaneData *vPlanePointer = vPlaneTestData;
+OCTToxAVPlaneData aPlaneTestData [] = {14, 15, 16, 17};
+OCTToxAVPlaneData *aPlanePointer = aPlaneTestData;
 
 @interface OCTToxAVTests : XCTestCase
 
@@ -27,6 +62,9 @@
 {
     [super setUp];
     // Put setup code here. This method is called before the invocation of each test method in the class.
+
+    refToSelf = (__bridge void *)(self);
+
     self.tox = [[OCTTox alloc] initWithOptions:[OCTToxOptions new] savedData:nil error:nil];
     self.toxAV = [[OCTToxAV alloc] initWithTox:self.tox error:nil];
 }
@@ -34,14 +72,92 @@
 - (void)tearDown
 {
     // Put teardown code here. This method is called after the invocation of each test method in the class.
+
+    refToSelf = NULL;
+
     self.tox = nil;
     self.toxAV = nil;
+
     [super tearDown];
 }
 
 - (void)testInit
 {
     XCTAssertNotNil(self.toxAV);
+}
+
+- (void)testVersionMethods
+{
+    _toxav_version_major = mocked_toxav_version_major;
+    XCTAssertEqual(111, [OCTToxAV versionMajor]);
+
+    _toxav_version_minor = mocked_toxav_version_minor;
+    XCTAssertEqual(222, [OCTToxAV versionMinor]);
+
+    _toxav_version_patch = mocked_toxav_version_patch;
+    XCTAssertEqual(333, [OCTToxAV versionPatch]);
+
+    XCTAssertEqualObjects(@"111.222.333", [OCTToxAV version]);
+
+    _toxav_version_is_compatible = mocked_toxav_version_is_compatible;
+    XCTAssertFalse([OCTToxAV versionIsCompatibleWith:999 minor:888 patch:777]);
+}
+
+- (void)testCallFriend
+{
+    _toxav_call = mocked_tox_av_call_success;
+    XCTAssertTrue([self.toxAV callFriendNumber:1234 audioBitRate:5678 videoBitRate:9101112 error:nil]);
+
+    _toxav_call = mocked_tox_av_call_fail;
+    XCTAssertFalse([self.toxAV callFriendNumber:1234 audioBitRate:5678 videoBitRate:9101112 error:nil]);
+}
+
+- (void)testSendCallControl
+{
+    _toxav_call_control = mocked_toxav_call_control_resume;
+    XCTAssertTrue([self.toxAV sendCallControl:OCTToxAVCallControlResume toFriendNumber:12345 error:nil]);
+
+    _toxav_call_control = mocked_toxav_call_control_cancel;
+    XCTAssertTrue([self.toxAV sendCallControl:OCTToxAVCallControlCancel toFriendNumber:12345 error:nil]);
+}
+
+- (void)testStartandStop
+{
+    _toxav_iterate = mocked_toxav_iterate;
+    _toxav_iteration_interval = mocked_toxav_iteration_interval;
+
+    [self.toxAV start];
+    [self.toxAV stop];
+}
+
+- (void)testSetAudioBitRate
+{
+
+    _toxav_audio_bit_rate_set = mocked_toxav_audio_bit_rate_set;
+    XCTAssertTrue([self.toxAV setAudioBitRate:1111 force:YES forFriend:5678 error:nil]);
+}
+
+- (void)testSetVideoBitRate
+{
+    _toxav_video_bit_rate_set = mocked_toxav_video_bit_rate_set;
+    XCTAssertFalse([self.toxAV setVideoBitRate:10 force:NO forFriend:5 error:nil]);
+}
+
+- (void)testSendAudioFrame
+{
+    _toxav_audio_send_frame = mocked_toxav_audio_send_frame;
+    XCTAssertTrue([self.toxAV sendAudioFrame:pcmPointer sampleCount:6 channels:7 sampleRate:8 toFriend:5 error:nil]);
+}
+
+- (void)testSendVideoFrame
+{
+    _toxav_video_send_frame = mocked_toxav_video_send_frame;
+    XCTAssertFalse([self.toxAV sendVideoFrametoFriend:7 width:50 height:70
+                                               yPlane:yPlanePointer
+                                               uPlane:uPlanePointer
+                                               vPlane:vPlanePointer
+                                               aPlane:aPlanePointer
+                                                error:nil]);
 }
 
 #pragma mark Private methods
@@ -301,6 +417,162 @@
 
     [self waitForExpectationsWithTimeout:1.0 handler:nil];
     OCMVerifyAll((id)self.toxAV.delegate);
+
 }
 
 @end
+
+#pragma mark - Mocked toxav methods
+
+uint32_t mocked_toxav_version_major(void)
+{
+    return 111;
+}
+
+uint32_t mocked_toxav_version_minor(void)
+{
+    return 222;
+}
+
+uint32_t mocked_toxav_version_patch(void)
+{
+    return 333;
+}
+
+void mocked_toxav_iterate(ToxAV *cToxAV)
+{
+    OCTToxAV *toxAV = [(__bridge OCTToxAVTests *)refToSelf toxAV];
+
+    CCCAssertTrue(toxAV.toxAV == cToxAV);
+}
+
+uint32_t mocked_toxav_iteration_interval(const ToxAV *cToxAV)
+{
+    OCTToxAV *toxAV = [(__bridge OCTToxAVTests *)refToSelf toxAV];
+
+    CCCAssertTrue(toxAV.toxAV == cToxAV);
+
+    return 200;
+}
+
+void mocked_toxav_kill(ToxAV *cToxAV)
+{
+    OCTToxAV *toxAV = [(__bridge OCTToxAVTests *)refToSelf toxAV];
+
+    CCCAssertTrue(toxAV.toxAV == cToxAV);
+}
+
+bool mocked_tox_av_call_success(ToxAV *cToxAV, uint32_t friend_number, uint32_t audio_bit_rate, uint32_t video_bit_rate, TOXAV_ERR_CALL *error)
+{
+    OCTToxAV *toxAV = [(__bridge OCTToxAVTests *)refToSelf toxAV];
+
+    CCCAssertTrue(toxAV.toxAV == cToxAV);
+
+    CCCAssertEqual(1234, friend_number);
+    CCCAssertEqual(5678, audio_bit_rate);
+    CCCAssertEqual(9101112, video_bit_rate);
+
+    return true;
+}
+
+bool mocked_tox_av_call_fail(ToxAV *cToxAV, uint32_t friend_number, uint32_t audio_bit_rate, uint32_t video_bit_rate, TOXAV_ERR_CALL *error)
+{
+    OCTToxAV *toxAV = [(__bridge OCTToxAVTests *)refToSelf toxAV];
+
+    CCCAssertTrue(toxAV.toxAV == cToxAV);
+
+    CCCAssertEqual(1234, friend_number);
+    CCCAssertEqual(5678, audio_bit_rate);
+    CCCAssertEqual(9101112, video_bit_rate);
+
+    return false;
+}
+
+
+bool mocked_toxav_call_control_resume(ToxAV *cToxAV, uint32_t friend_number, TOXAV_CALL_CONTROL control, TOXAV_ERR_CALL_CONTROL *error)
+{
+    OCTToxAV *toxAV = [(__bridge OCTToxAVTests *)refToSelf toxAV];
+
+    CCCAssertTrue(toxAV.toxAV == cToxAV);
+
+    CCCAssertEqual(friend_number, 12345);
+    CCCAssertEqual(control, TOXAV_CALL_CONTROL_RESUME);
+
+    return true;
+}
+
+bool mocked_toxav_call_control_cancel(ToxAV *cToxAV, uint32_t friend_number, TOXAV_CALL_CONTROL control, TOXAV_ERR_CALL_CONTROL *error)
+{
+    OCTToxAV *toxAV = [(__bridge OCTToxAVTests *)refToSelf toxAV];
+
+    CCCAssertTrue(toxAV.toxAV == cToxAV);
+
+    CCCAssertEqual(friend_number, 12345);
+    CCCAssertEqual(control, TOXAV_CALL_CONTROL_CANCEL);
+
+    return true;
+}
+
+bool mocked_toxav_audio_bit_rate_set(ToxAV *cToxAV, uint32_t friend_number, uint32_t audio_bit_rate, bool force, TOXAV_ERR_SET_BIT_RATE *error)
+{
+    OCTToxAV *toxAV = [(__bridge OCTToxAVTests *)refToSelf toxAV];
+
+    CCCAssertTrue(toxAV.toxAV == cToxAV);
+
+    CCCAssertEqual(5678, friend_number);
+    CCCAssertEqual(1111, audio_bit_rate);
+    CCCAssertTrue(force);
+    return true;
+}
+bool mocked_toxav_video_bit_rate_set(ToxAV *cToxAV, uint32_t friend_number, uint32_t audio_bit_rate, bool force, TOXAV_ERR_SET_BIT_RATE *error)
+{
+    OCTToxAV *toxAV = [(__bridge OCTToxAVTests *)refToSelf toxAV];
+
+    CCCAssertTrue(toxAV.toxAV == cToxAV);
+
+    CCCAssertEqual(5, friend_number);
+    CCCAssertEqual(10, audio_bit_rate);
+    CCCAssertFalse(force);
+
+    return false;
+}
+
+bool mocked_toxav_audio_send_frame(ToxAV *cToxAV, uint32_t friend_number, const int16_t *pcm, size_t sample_count, uint8_t channels, uint32_t sampling_rate, TOXAV_ERR_SEND_FRAME *error)
+{
+    OCTToxAV *toxAV = [(__bridge OCTToxAVTests *)refToSelf toxAV];
+
+    CCCAssertTrue(toxAV.toxAV == cToxAV);
+
+    CCCAssertEqual(pcmPointer, pcm);
+    CCCAssertEqual(5, friend_number);
+    CCCAssertEqual(6, sample_count);
+    CCCAssertEqual(7, channels);
+    CCCAssertEqual(8, sampling_rate);
+
+    return true;
+}
+
+bool mocked_toxav_video_send_frame(ToxAV *cToxAV, uint32_t friend_number, uint16_t width, uint16_t height, const uint8_t *y, const uint8_t *u, const uint8_t *v, const uint8_t *a, TOXAV_ERR_SEND_FRAME *error)
+{
+    OCTToxAV *toxAV = [(__bridge OCTToxAVTests *)refToSelf toxAV];
+
+    CCCAssertTrue(toxAV.toxAV == cToxAV);
+
+    CCCAssertEqual(50, width);
+    CCCAssertEqual(70, height);
+    CCCAssertEqual(yPlanePointer, y);
+    CCCAssertEqual(uPlanePointer, u);
+    CCCAssertEqual(vPlanePointer, v);
+    CCCAssertEqual(aPlanePointer, a);
+    CCCAssertEqual(7, friend_number);
+
+    return false;
+}
+
+bool mocked_toxav_version_is_compatible(uint32_t major, uint32_t minor, uint32_t patch)
+{
+    CCCAssertEqual(999, major);
+    CCCAssertEqual(888, minor);
+    CCCAssertEqual(777, patch);
+    return false;
+}

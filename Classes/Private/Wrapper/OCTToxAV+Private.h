@@ -16,7 +16,7 @@
 extern uint32_t (*_toxav_version_major)(void);
 extern uint32_t (*_toxav_version_minor)(void);
 extern uint32_t (*_toxav_version_patch)(void);
-extern _Bool (*_toxav_version_is_compatible)(uint32_t major, uint32_t minor, uint32_t patch);
+extern bool (*_toxav_version_is_compatible)(uint32_t major, uint32_t minor, uint32_t patch);
 
 extern ToxAV *(*_toxav_new)(Tox *tox, TOXAV_ERR_NEW *error);
 extern uint32_t (*_toxav_iteration_interval)(const ToxAV *toxAV);
@@ -44,6 +44,8 @@ toxav_audio_receive_frame_cb receiveAudioFrameCallback;
 toxav_video_receive_frame_cb receiveVideoFrameCallback;
 
 @interface OCTToxAV (Private)
+
+@property (assign, nonatomic) ToxAV *toxAV;
 
 - (void)fillError:(NSError **)error withCErrorInit:(TOXAV_ERR_NEW)cError;
 - (void)fillError:(NSError **)error withCErrorCall:(TOXAV_ERR_CALL)cError;
