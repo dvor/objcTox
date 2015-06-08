@@ -20,6 +20,4 @@
 @property RLMArray<OCTDBFriend> *friends;
 @property OCTDBMessageAbstract *lastCall;
 
-@property NSTimeInterval callDuration;
-
 @end

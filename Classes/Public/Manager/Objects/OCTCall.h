@@ -20,6 +20,11 @@ typedef NS_ENUM(NSUInteger, OCTCallStatus) {
 @interface OCTCall : NSObject
 
 /**
+ * Unique identifier of a call.
+ */
+@property (copy, nonatomic, readonly) NSString *uniqueIdentifier;
+
+/**
  * Friends related to the call.
  **/
 @property (strong, nonatomic, readonly) NSArray *friends;

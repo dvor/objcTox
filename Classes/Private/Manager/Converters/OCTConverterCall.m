@@ -21,6 +21,7 @@
 {
     return NSStringFromClass([OCTCall class]);
 }
+
 - (NSString *)dbObjectClassName
 {
     return NSStringFromClass([OCTDBCall class]);

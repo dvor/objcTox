@@ -10,6 +10,11 @@
 
 @interface OCTCall ()
 
+@property (copy, nonatomic, readwrite) NSString *uniqueIdentifier;
+@property (strong, nonatomic, readwrite) NSArray *friends;
+@property (nonatomic, assign, readwrite) OCTMessageCall *lastCall;
+@property (nonatomic, assign, readwrite) OCTCallStatus status;
+
 @end
 
 @implementation OCTCall
