@@ -231,6 +231,102 @@ NSString *const kOCTDBManagerObjectClassKey = @"kOCTDBManagerObjectClassKey";
     });
 }
 
+#pragma mark - Calls
+
+- (RLMResults *)allCalls
+{
+    __block RLMResults *results;
+
+    dispatch_sync(self.queue, ^{
+        results = [OCTDBCall allObjectsInRealm:self.realm];
+    });
+
+    return results;
+}
+
+- (RLMResults *)callsWithPredicate:(NSPredicate *)predicate
+{
+    __block RLMResults *results;
+
+    dispatch_sync(self.queue, ^{
+        results = [OCTDBCall objectsInRealm:self.realm withPredicate:predicate];
+    });
+
+    return results;
+}
+
+- (OCTDBCall *)getOrCreateCallWithFriendNumber:(NSInteger)friendNumber
+{
+    OCTDBFriend *friend = [self getOrCreateFriendWithFriendNumber:friendNumber];
+
+    __block OCTDBCall *call = nil;
+
+    dispatch_sync(self.queue, ^{
+        // TODO add this (friends.@count == 1) condition. Currentry Realm doesn't support collection queries
+        // See https://github.com/realm/realm-cocoa/issues/1490
+        // chat = [[OCTDBCall objectsInRealm:self.realm
+        //                             where:@"friends.@count == 1 AND ANY friends == %@", friend] lastObject];
+
+        call = [[OCTDBCall objectsInRealm:self.realm where:@"ANY friends == %@", friend] lastObject];
+
+        if (call) {
+            return;
+        }
+
+        call = [OCTDBCall new];
+        call.lastCall = nil;
+
+        [self.realm beginWriteTransaction];
+        [self.realm addObject:call];
+        [call.friends addObject:friend];
+        [self.realm commitWriteTransaction];
+
+        [self sendUpdateNotificationForClass:[OCTDBCall class]];
+    });
+
+    return call;
+}
+
+- (OCTDBCall *)callWithUniqueIdentifier:(NSString *)uniqueIdentifier
+{
+    __block OCTDBCall *call = nil;
+
+    dispatch_sync(self.queue, ^{
+        call = [OCTDBCall objectInRealm:self.realm forPrimaryKey:uniqueIdentifier];
+    });
+
+    return call;
+}
+
+- (void)removeCallWithAllMessages:(OCTDBCall *)call
+{
+    NSParameterAssert(call);
+
+    dispatch_sync(self.queue, ^{
+        RLMResults *messages = [OCTDBMessageAbstract objectsInRealm:self.realm where:@"call == %@", call];
+
+        [self.realm beginWriteTransaction];
+        for (OCTDBMessageAbstract *message in messages) {
+            if (message.textMessage) {
+                [self.realm deleteObject:message.textMessage];
+            }
+            if (message.fileMessage) {
+                [self.realm deleteObject:message.fileMessage];
+            }
+            if (message.callMessage) {
+                [self.realm deleteObject:message.callMessage];
+            }
+        }
+
+        [self.realm deleteObjects:messages];
+        [self.realm deleteObject:call];
+        [self.realm commitWriteTransaction];
+
+        [self sendUpdateNotificationForClass:[OCTDBCall class]];
+        [self sendUpdateNotificationForClass:[OCTDBMessageAbstract class]];
+    });
+}
+
 #pragma mark -  Messages
 
 - (RLMResults *)allMessagesInChat:(OCTDBChat *)chat
