@@ -8,7 +8,7 @@
 
 #import <Foundation/Foundation.h>
 #import <UIKit/UIKit.h>
-#import "OCTChat.h"
+#import "OCTMessageCall.h"
 #import "OCTFriend.h"
 
 typedef NS_ENUM(NSUInteger, OCTCallStatus) {
@@ -20,18 +20,22 @@ typedef NS_ENUM(NSUInteger, OCTCallStatus) {
 @interface OCTCall : NSObject
 
 /**
- * OCTChat related session with the call.
- **/
-@property (strong, nonatomic, readonly) OCTChat *chatSession;
+ * Unique identifier of a call.
+ */
+@property (copy, nonatomic, readonly) NSString *uniqueIdentifier;
 
 /**
- * Friend related to the call.
+ * Friends related to the call.
  **/
-@property (strong, nonatomic, readonly) OCTFriend *caller;
+@property (strong, nonatomic, readonly) NSArray *friends;
 
 /**
- * Call status
+ * Call status.
  **/
 @property (nonatomic, assign, readonly) OCTCallStatus status;
 
+/**
+ * Last call that was made.
+ **/
+@property (nonatomic, assign, readonly) OCTMessageCall *lastCall;
 @end

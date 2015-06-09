@@ -6,17 +6,20 @@
 //  Copyright (c) 2015 dvor. All rights reserved.
 //
 
-#import "OCTCall.h"
-#import "OCTAudioEngine.h"
-#import "OCTToxAV.h"
+#import "OCTCall+Private.h"
 
 @interface OCTCall ()
+
+@property (copy, nonatomic, readwrite) NSString *uniqueIdentifier;
+@property (strong, nonatomic, readwrite) NSArray *friends;
+@property (nonatomic, assign, readwrite) OCTMessageCall *lastCall;
+@property (nonatomic, assign, readwrite) OCTCallStatus status;
 
 @end
 
 @implementation OCTCall
 
-- (instancetype)initWithChat:(OCTChat *)chat friend:(OCTFriend *)friend
+- (instancetype)initWithCallWithFriend:(OCTFriend *)friend
 {
     self = [super init];
 
@@ -24,8 +27,7 @@
         return nil;
     }
 
-    _chatSession = chat;
-    _caller = friend;
+    _friends = @[friend];
 
     return self;
 }
