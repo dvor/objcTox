@@ -409,6 +409,80 @@
     XCTAssertEqualObjects(message.textMessage.text, db.textMessage.text);
 }
 
+- (void)testAllCalls
+{
+    OCTDBCall *db1 = [OCTDBCall new];
+    OCTDBMessageCall *dbMessageCall = [OCTDBMessageCall new];
+    dbMessageCall.callDuration = 99;
+
+    OCTDBMessageAbstract *messageAbstract = [OCTDBMessageAbstract new];
+    messageAbstract.callMessage = dbMessageCall;
+
+    db1.lastCall = messageAbstract;
+
+    OCTDBCall *db2 = [OCTDBCall new];
+
+    [self.manager.realm beginWriteTransaction];
+    [self.manager.realm addObject:db1];
+    [self.manager.realm addObject:db2];
+    [self.manager.realm commitWriteTransaction];
+
+    RLMResults *results = [self.manager allCalls];
+
+    XCTAssertEqual(results.count, 2);
+    XCTAssertEqual([results[0] lastCall].callMessage.callDuration, db1.lastCall.callMessage.callDuration);
+}
+
+- (void)testCallsWithPredicate
+{
+    OCTDBCall *db1 = [OCTDBCall new];
+    OCTDBMessageCall *dbMessageCall = [OCTDBMessageCall new];
+    dbMessageCall.callDuration = 99;
+    OCTDBMessageAbstract *messageAbstract = [OCTDBMessageAbstract new];
+    messageAbstract.callMessage = dbMessageCall;
+    db1.lastCall = messageAbstract;
+
+    OCTDBCall *db2 = [OCTDBCall new];
+    OCTDBMessageCall *dbMessageCall2 = [OCTDBMessageCall new];
+    dbMessageCall2.callDuration = 101;
+    OCTDBMessageAbstract *messageAbstract2 = [OCTDBMessageAbstract new];
+    messageAbstract2.callMessage = dbMessageCall2;
+    db2.lastCall = messageAbstract2;
+
+    [self.manager.realm beginWriteTransaction];
+    [self.manager.realm addObject:db1];
+    [self.manager.realm addObject:db2];
+    [self.manager.realm commitWriteTransaction];
+
+    NSPredicate *predicate = [NSPredicate predicateWithFormat:@"lastCall.callMessage.callDuration < 100"];
+    RLMResults *results = [self.manager callsWithPredicate:predicate];
+
+    XCTAssertEqual(results.count, 1);
+
+    XCTAssertEqual(db1.lastCall.callMessage.callDuration, [[[results[0] lastCall] callMessage] callDuration]);
+}
+
+- (void)testGetOrCreateCallWithFriendNumber
+{
+    [self expectUpdateNotificationWithClass:[OCTDBCall class]];
+
+    // create friend
+    OCTDBFriend *friend = [self.manager getOrCreateFriendWithFriendNumber:7];
+
+    OCTDBCall *call = [self.manager getOrCreateCallWithFriendNumber:7];
+    XCTAssertNotNil(call);
+    XCTAssertEqual(call.friends.count, 1);
+    XCTAssertEqualObjects([call.friends lastObject], friend);
+
+    [self.manager.realm beginWriteTransaction];
+    call.lastCall.callMessage.callDuration = 99;
+    [self.manager.realm commitWriteTransaction];
+
+    OCTDBCall *call2 = [self.manager getOrCreateCallWithFriendNumber:7];
+    XCTAssertNotNil(call2);
+    XCTAssertEqual(call.lastCall.callMessage.callDuration, call2.lastCall.callMessage.callDuration);
+}
+
 #pragma mark -  Supporting methods
 
 - (void)expectUpdateNotificationWithClass:(Class)class

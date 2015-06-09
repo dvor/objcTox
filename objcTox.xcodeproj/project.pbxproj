@@ -603,6 +603,7 @@
 				61187E9275CFDB3380A86933C002339F /* OCTArrayTests.m */,
 				F0E77FC01B154F6000434A96 /* OCTAudioEngineTests.m */,
 				CE21FCF7FF3FB4139FE3DCBD4A2535D9 /* OCTBasicContainerTests.m */,
+				F0AC56F51B2509CA0014CAA2 /* OCTCallTests.m */,
 				1CB975510AB663E9836E6CF2AD51528E /* OCTChatTests.m */,
 				F070187E1B2636F400508198 /* OCTConverterCallTests.m */,
 				B400B62877C8B56E6C093F883F032D43 /* OCTConverterChatTests.m */,
@@ -627,7 +628,6 @@
 				F07C8F9D1B1E444300E399F5 /* OCTToxAVTests.m */,
 				11B4BAF61B11E38A0001A96A /* OCTSubmanagerFilesTests.m */,
 				F02C04D01B20FB98001025D1 /* OCTSubmanagerCallsTests.m */,
-				F0AC56F51B2509CA0014CAA2 /* OCTCallTests.m */,
 			);
 			path = objcToxTests;
 			sourceTree = "<group>";
