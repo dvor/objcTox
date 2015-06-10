@@ -65,4 +65,9 @@
 - (void)updateObjectPassingTest:(BOOL (^)(id obj, NSUInteger idx, BOOL *stop))testBlock
                     updateBlock:(void (^)(id object))updateBlock;
 
+/**
+ * @return Index of object passing the first test. NSNotFound if not found.
+ */
+- (NSUInteger)indexOfObjectPassingTest:(BOOL (^)(id obj, NSUInteger idx, BOOL *stop))predicate;
+
 @end

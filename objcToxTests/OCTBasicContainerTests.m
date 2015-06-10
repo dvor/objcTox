@@ -273,4 +273,20 @@
     );
 }
 
+- (void)testindexOfObjectPassingTest
+{
+    id testBlock = ^BOOL (id obj, NSUInteger idx, BOOL *stop) {
+        return YES;
+    };
+
+    id array = OCMClassMock([NSMutableArray class]);
+    OCMExpect([array indexOfObjectPassingTest:testBlock]);
+
+    self.container.array = array;
+
+    [self.container indexOfObjectPassingTest:testBlock];
+
+    OCMVerifyAll(array);
+}
+
 @end
