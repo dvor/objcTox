@@ -47,4 +47,24 @@
     XCTAssertFalse(call3 == call);
 }
 
+- (void)testTimer
+{
+    XCTestExpectation *expectation = [self expectationWithDescription:@"Test Timer"];
+    OCTChat *chat = [OCTChat new];
+    OCTCall *call = [[OCTCall alloc] initCallWithChat:chat];
+    [call startTimer];
+
+    NSInteger delayTime = dispatch_time(DISPATCH_TIME_NOW, 1.5 * NSEC_PER_SEC);
+
+    dispatch_after(delayTime, dispatch_get_main_queue(), ^{
+        if (call.callDuration > 1) {
+            [expectation fulfill];
+        }
+    });
+
+    [self waitForExpectationsWithTimeout:2.0 handler:^(NSError *error) {
+        [call stopTimer];
+    }];
+}
+
 @end

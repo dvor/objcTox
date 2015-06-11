@@ -30,4 +30,9 @@ typedef NS_ENUM(NSUInteger, OCTCallStatus) {
  **/
 @property (nonatomic, assign, readonly) OCTCallStatus status;
 
+/**
+ * Call duration
+ **/
+@property (nonatomic, assign, readonly) NSTimeInterval callDuration;
+
 @end
