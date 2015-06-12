@@ -15,3 +15,12 @@ script:
 
 after_success:
     - slather
+
+notifications:
+    email: false
+
+    irc:
+      channels:
+        - "chat.freenode.net#tox-dev"
+      on_success: always
+      on_failure: always
