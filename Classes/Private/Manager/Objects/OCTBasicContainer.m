@@ -191,4 +191,10 @@
     }
 }
 
+- (NSUInteger)indexOfObjectPassingTest:(BOOL (^)(id obj, NSUInteger idx, BOOL *stop))predicate
+{
+    NSParameterAssert(predicate);
+    return [self.array indexOfObjectPassingTest:predicate];
+}
+
 @end
