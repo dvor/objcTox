@@ -7,7 +7,7 @@
 //
 
 #import "OCTAudioEngine+Private.h"
-#import "TPCircularBuffer.h"
+
 @import AVFoundation;
 
 static const AudioUnitElement kInputBus = 1;
@@ -178,8 +178,9 @@ OSStatus (*_AudioUnitRender)(AudioUnit inUnit,
     int32_t len = (int32_t)(channels * sampleCount * sizeof(int16_t));
 
     TPCircularBufferProduceBytes(&_outputBuffer, pcm, len);
-    if ((self.outputSampleRate != sampleRate) && [self updateOutputSampleRate:sampleRate error:nil]) {
-        self.outputSampleRate = sampleRate;
+
+    if (self.outputSampleRate != sampleRate) {
+        [self updateOutputSampleRate:sampleRate error:nil];
     }
 }
 
@@ -435,6 +436,8 @@ static OSStatus outputRenderCallBack(void *inRefCon,
           failureReason:@"Failed to setup output stream format"];
         return NO;
     }
+
+    self.outputSampleRate = rate;
 
     return YES;
 }

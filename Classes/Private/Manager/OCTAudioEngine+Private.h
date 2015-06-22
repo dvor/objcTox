@@ -7,6 +7,8 @@
 //
 
 #import "OCTAudioEngine.h"
+#import "TPCircularBuffer.h"
+
 @import AVFoundation;
 
 /**
@@ -49,6 +51,10 @@ extern OSStatus (*_DisposeAUGraph)(AUGraph inGraph);
 
 @property (nonatomic, assign) AUGraph processingGraph;
 @property (nonatomic, assign) AudioUnit ioUnit;
+@property (nonatomic, assign) TPCircularBuffer outputBuffer;
+@property (nonatomic, assign) TPCircularBuffer inputBuffer;
+@property (nonatomic, assign) OCTToxAVSampleRate inputSampleRate;
+@property (nonatomic, assign) OCTToxAVSampleRate outputSampleRate;
 
 - (void)fillError:(NSError **)error
          withCode:(NSUInteger)code
