@@ -159,6 +159,26 @@
     XCTAssertEqual(self.callManager.audioEngine.friendNumber, 1234);
 }
 
+- (void)testRouteAudioToSpeaker
+{
+    id audioEngine = OCMClassMock([OCTAudioEngine class]);
+    self.callManager.audioEngine = audioEngine;
+
+    [self.callManager routeAudioToSpeaker:YES error:nil];
+
+    OCMVerify([audioEngine routeAudioToSpeaker:YES error:nil]);
+}
+
+- (void)testEnableMicrophone
+{
+    id audioEngine = OCMClassMock([OCTAudioEngine class]);
+    self.callManager.audioEngine = audioEngine;
+
+    [self.callManager setEnableMicrophone:NO];
+
+    OCMVerify([audioEngine setEnableMicrophone:NO]);
+}
+
 - (void)testTogglePauseForCall
 {
     id toxAV = OCMClassMock([OCTToxAV class]);
