@@ -13,31 +13,57 @@ typedef NS_ENUM(NSUInteger, OCTFetchRequestType) {
     OCTFetchRequestTypeMessageAbstract,
 };
 
-typedef NS_ENUM(NSInteger, OCTMessageFileType) {
+typedef NS_ENUM(NSInteger, OCTMessageFileState) {
     /**
      * File is incoming and is waiting confirmation of user to be downloaded.
-     * Please start loading or cancel it with <<placeholder>> method.
+     * Please start loading or cancel it with -OCTSubmanagerFiles saveFile:....
+     * Resumable.
      */
-    OCTMessageFileTypeWaitingConfirmation,
+    OCTMessageFileStateWaitingConfirmation,
 
     /**
      * File is downloading or uploading.
+     * Resumable.
      */
-    OCTMessageFileTypeLoading,
+    OCTMessageFileStateLoading,
 
     /**
      * Downloading or uploading of file is paused.
+     * Resumable.
      */
-    OCTMessageFileTypePaused,
+    OCTMessageFileStatePaused,
 
     /**
      * Downloading or uploading of file was canceled.
+     * Not resumable.
      */
-    OCTMessageFileTypeCanceled,
+    OCTMessageFileStateCanceled,
 
     /**
      * File is fully loaded.
      * In case of incoming file now it can be shown to user.
+     * Not resumable.
      */
-    OCTMessageFileTypeReady,
+    OCTMessageFileStateReady,
+};
+
+/* Roughly corresponds to TOX_FILE_KIND in toxcore */
+typedef NS_ENUM(NSInteger, OCTFileUsage) {
+    /**
+     * Standard type of file transfer.
+     */
+    OCTFileUsageData,
+    /**
+     * The file is an image that should be displayed inline, without
+     * the ability for user interaction. (Unimplemented)
+     */
+    OCTFileUsageSticker,
+    /**
+     * Unimplemented.
+     */
+    OCTFileUsageInlinePhoto,
+    /**
+     * Unimplemented.
+     */
+    OCTFileUsageInlineVideo,
 };
