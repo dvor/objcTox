@@ -54,6 +54,16 @@
 @property BOOL receivingVideo;
 
 /**
+ * The call is paused by friend.
+ */
+@property BOOL pausedByFriend;
+
+/**
+ * The call is paused by you.
+ */
+@property BOOL pausedByYou;
+
+/**
  * Call duration
  **/
 @property NSTimeInterval callDuration;
