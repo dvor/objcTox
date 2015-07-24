@@ -30,6 +30,12 @@ extern NSString *const kOCTToxAVErrorDomain;
  ******************************************************************************/
 
 typedef NS_OPTIONS(NSInteger, OCTToxAVCallState) {
+
+    /**
+     * The call is paused by the friend.
+     */
+    OCTToxAVFriendCallStatePaused = 0,
+
     /**
      * Set by the AV core if an error occurred on the remote end or if friend
      * timed out. This is the final state after which no more state

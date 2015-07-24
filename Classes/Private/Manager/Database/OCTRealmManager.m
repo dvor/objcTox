@@ -336,7 +336,6 @@
             event = OCTMessageCallEventUnanswered;
             break;
         case OCTCallStatusActive:
-        case OCTCallStatusPaused:
             event = OCTMessageCallEventAnswered;
             break;
     }

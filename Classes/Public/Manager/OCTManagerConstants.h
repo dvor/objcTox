@@ -70,9 +70,21 @@ typedef NS_ENUM(NSInteger, OCTCallStatus) {
      * Call is currently active in session.
      */
     OCTCallStatusActive,
+};
+
+typedef NS_OPTIONS(NSInteger, OCTCallPausedStatus) {
+    /**
+     * Call is not paused
+     */
+    OCTCallPausedStatusNone = 0,
 
     /**
-     * Call is currently on hold.
+     * Call is paused by the user
      */
-    OCTCallStatusPaused,
+    OCTCallPausedStatusByUser = 1 << 0,
+
+        /**
+         * Call is paused by friend
+         */
+        OCTCallPausedStatusByFriend = 1 << 1,
 };

@@ -15,6 +15,7 @@
  * Please note that all properties of this object are readonly.
  * All management of calls are handeled through OCTCallSubmanagerCalls.
  */
+
 @interface OCTCall : OCTObject
 
 /**
@@ -26,6 +27,11 @@
  * Call status
  **/
 @property OCTCallStatus status;
+
+/**
+ * This property contains paused status for Active call.
+ */
+@property (nonatomic, assign) OCTCallPausedStatus pausedStatus;
 
 /**
  * The friend who started the call.
