@@ -79,6 +79,14 @@
 - (UIView *)videoFeedForCall:(OCTCall *)call;
 
 /**
+ * The preview video of the user.
+ * You must be in a video call for this to show. Otherwise the layer will
+ * just be black.
+ * @return CALayer of the preview. Nil if not available.
+ */
+- (CALayer *)videoCallPreview;
+
+/**
  * Set the Audio bit rate.
  * @param bitrate The bitrate to change to.
  * @param call The Call to set the bitrate for.

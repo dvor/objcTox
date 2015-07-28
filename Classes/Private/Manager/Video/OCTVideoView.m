@@ -20,7 +20,7 @@
 
 - (instancetype)initWithFrame:(CGRect)frame
 {
-    EAGLContext *eaglContext = [[EAGLContext alloc] initWithAPI: kEAGLRenderingAPIOpenGLES2];
+    EAGLContext *eaglContext = [[EAGLContext alloc] initWithAPI:kEAGLRenderingAPIOpenGLES2];
 
     return [self initWithFrame:frame context:eaglContext];
 }

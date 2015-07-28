@@ -810,7 +810,6 @@
 				AE2776A39D9F4544CD765056987C22B9 /* OCTCall.m in Sources */,
 				70127B62E87BA470CAEDA23529AAD540 /* OCTChat.m in Sources */,
 				F09E0C2F1B18475F00C25A24 /* OCTSubmanagerCalls.m in Sources */,
-				F07C8F991B1E37D300E399F5 /* OCTToxAVConstants.m in Sources */,
 				F0DAA6431B369F3D00A55CB1 /* OCTVideoView.m in Sources */,
 				F0246F731B3482540000E49E /* OCTVideoEngine.m in Sources */,
 				F02C04D11B20FB98001025D1 /* OCTSubmanagerCallsTests.m in Sources */,

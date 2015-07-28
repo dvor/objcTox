@@ -7,6 +7,7 @@
 //
 
 #import <Foundation/Foundation.h>
+#import <UIKit/UIKit.h>
 
 #import "OCTToxAV.h"
 
@@ -29,8 +30,13 @@
 - (void)startVideoSession;
 
 /**
- * Stop the vidio session.
+ * Stop the video session.
  */
 - (void)stopVideoSession;
+
+/**
+ * Layer of the preview video.
+ */
+- (CALayer *)videoCallPreview;
 
 @end

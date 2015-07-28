@@ -17,6 +17,7 @@ const OCTToxAVAudioBitRate kDefaultVideoBitRate = 400;
 
 @property (strong, nonatomic) OCTToxAV *toxAV;
 @property (strong, nonatomic) OCTAudioEngine *audioEngine;
+@property (strong, nonatomic) OCTVideoEngine *videoEngine;
 @property (strong, nonatomic) OCTCallTimer *timer;
 @property (nonatomic, assign) dispatch_once_t setupOnceToken;
 
@@ -49,7 +50,11 @@ const OCTToxAVAudioBitRate kDefaultVideoBitRate = 400;
 
         self.audioEngine = [OCTAudioEngine new];
         self.audioEngine.toxav = self.toxAV;
-        status = [self.audioEngine setupWithError:error];
+        self.videoEngine = [OCTVideoEngine new];
+
+
+        status = [self.audioEngine setupWithError:error] &&
+                 [self.videoEngine setupWithError:error];
     });
 
     return status;
@@ -180,6 +185,13 @@ const OCTToxAVAudioBitRate kDefaultVideoBitRate = 400;
 - (UIView *)videoFeedForCall:(OCTCall *)call
 {
     return nil;
+}
+
+- (CALayer *)videoCallPreview
+{
+    [self.videoEngine startVideoSession];
+
+    return [self.videoEngine videoCallPreview];
 }
 
 - (BOOL)setAudioBitrate:(int)bitrate forCall:(OCTCall *)call error:(NSError **)error

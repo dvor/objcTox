@@ -10,11 +10,17 @@
 
 @import AVFoundation;
 
+static uint8_t *reusableUChromaPlane;
+static uint8_t *reusableVChromaPlane;
+
+
 @interface OCTVideoEngine () <AVCaptureVideoDataOutputSampleBufferDelegate>
 
 @property (nonatomic, strong) AVCaptureSession *captureSession;
 @property (nonatomic, strong) AVCaptureVideoDataOutput *dataOutput;
 @property (nonatomic, strong) dispatch_queue_t processingQueue;
+
+@property (nonatomic, assign) NSUInteger sizeOfChromaPlanes;
 
 @end
 
@@ -29,9 +35,12 @@
 
     _captureSession = [AVCaptureSession new];
     _dataOutput = [AVCaptureVideoDataOutput new];
+    _processingQueue = dispatch_queue_create("me.dvor.objcTox.OCTVideoEngineQueue", NULL);
 
     return self;
 }
+
+#pragma mark - Public
 
 - (BOOL)setupWithError:(NSError **)error
 {
@@ -44,33 +53,37 @@
 
     [self.captureSession addInput:videoInput];
 
-    self.processingQueue = dispatch_queue_create("me.dvor.objcTox.OCTVideoEngineQueue", NULL);
-
     [self.dataOutput setAlwaysDiscardsLateVideoFrames:YES];
     NSNumber *value  = [NSNumber numberWithUnsignedInt:kCVPixelFormatType_420YpCbCr8BiPlanarVideoRange];
-
     [self.dataOutput setVideoSettings:[NSDictionary dictionaryWithObject:value
                                                                   forKey:(id)kCVPixelBufferPixelFormatTypeKey]];
     [self.dataOutput setSampleBufferDelegate:self queue:self.processingQueue];
+
+    [self.captureSession addOutput:self.dataOutput];
 
     return YES;
 }
 
 - (void)startVideoSession
 {
-    dispatch_async(dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0), ^{
+    dispatch_async(self.processingQueue, ^{
         [self.captureSession startRunning];
     });
 }
 
 - (void)stopVideoSession
 {
-    dispatch_async(dispatch_get_main_queue(), ^{
+    dispatch_async(self.processingQueue, ^{
         [self.captureSession stopRunning];
     });
 }
 
-#pragma mark - Private methods
+- (CALayer *)videoCallPreview
+{
+    AVCaptureVideoPreviewLayer *previewLayer = [AVCaptureVideoPreviewLayer layerWithSession:self.captureSession];
+
+    return previewLayer;
+}
 
 #pragma mark - Buffer Delegate
 
@@ -95,23 +108,38 @@
     uint8_t *yPlane = CVPixelBufferGetBaseAddressOfPlane(imageBuffer, 0);
     uint8_t *uvPlane = CVPixelBufferGetBaseAddressOfPlane(imageBuffer, 1);
 
-    uint8_t uPlane[height * width / 4];
-    uint8_t vPlane[height * width / 4];
+    NSUInteger numberOfElementsForChroma = height * width / 4;
 
-    for (int i = 0; i < (height * width / 4); i += 2) {
-        uPlane[i] = uvPlane[i];
-        vPlane[i] = uvPlane[i+1];
+    if (numberOfElementsForChroma > self.sizeOfChromaPlanes) {
+
+        if (reusableUChromaPlane) {
+            free(reusableUChromaPlane);
+        }
+
+        if (reusableVChromaPlane) {
+            free(reusableVChromaPlane);
+        }
+
+        reusableUChromaPlane = malloc(numberOfElementsForChroma * sizeof(uint8_t));
+        reusableVChromaPlane = malloc(numberOfElementsForChroma * sizeof(uint8_t));
+
+        self.sizeOfChromaPlanes = numberOfElementsForChroma;
     }
 
-    CVPixelBufferUnlockBaseAddress(imageBuffer, 0);
+    for (int i = 0; i < (height * width / 4); i += 2) {
+        reusableUChromaPlane[i / 2] = uvPlane[i];
+        reusableVChromaPlane[i / 2] = uvPlane[i+1];
+    }
 
     [self.toxav sendVideoFrametoFriend:self.friendNumber
                                  width:width
                                 height:height
                                 yPlane:yPlane
-                                uPlane:uPlane
-                                vPlane:vPlane
+                                uPlane:reusableUChromaPlane
+                                vPlane:reusableVChromaPlane
                                  error:nil];
+
+    CVPixelBufferUnlockBaseAddress(imageBuffer, 0);
 }
 
 @end
