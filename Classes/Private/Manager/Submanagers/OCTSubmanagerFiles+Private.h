@@ -14,7 +14,4 @@
 
 @property (weak, nonatomic) id<OCTSubmanagerDataSource> dataSource;
 
-- (void)scheduleProgressUpdateForFile:(OCTActiveFile *)file;
-- (void)flushProgressNotifications;
-
 @end

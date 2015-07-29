@@ -77,7 +77,6 @@ void _OCTExceptFileNotInbound(void)
 
 @property (weak, nonatomic) id<OCTSubmanagerDataSource> dataSource;
 @property (strong) NSMutableDictionary<NSString *, OCTActiveFile *> *activeFiles;
-@property (strong) NSMutableSet<OCTActiveFile *> *filesToUpdate;
 
 @end
 
@@ -176,19 +175,6 @@ void _OCTExceptFileNotInbound(void)
     ret.friendNumber = f.sender.friendNumber;
     ret.fileSize = f.messageFile.fileSize;
     return ret;
-}
-
-- (void)scheduleProgressUpdateForFile:(OCTActiveFile *)file
-{
-    @synchronized(self) {
-        [self.filesToUpdate addObject:file];
-    }
-}
-
-- (void)flushProgressNotifications
-{
-    [self.filesToUpdate makeObjectsPerformSelector:@selector(_sendProgressUpdateNow)];
-    [self.filesToUpdate removeAllObjects];
 }
 
 #pragma mark - OCTToxDelegate.
