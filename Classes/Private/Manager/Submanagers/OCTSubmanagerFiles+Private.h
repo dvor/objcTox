@@ -11,4 +11,7 @@
 
 @interface OCTSubmanagerFiles (Private) <OCTSubmanagerProtocol>
 
+- (void)scheduleProgressUpdateForFile:(OCTActiveFile *)file;
+- (void)flushProgressNotifications;
+
 @end

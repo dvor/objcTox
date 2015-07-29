@@ -8,11 +8,9 @@
 
 #import <Foundation/Foundation.h>
 
-typedef NS_OPTIONS(uint32_t, OCTFileProperties) {
-    OCTFilePropertyProgress = 1,
-    OCTFilePropertyEstimatedTimeRemaining = 1 << 2,
-    OCTFilePropertyBytesMoved = 1 << 4,
-};
+@class OCTActiveFile;
+
+typedef void (^OCTFileNotificationBlock)(OCTActiveFile *__nonnull);
 
 /**
  * OCTActiveFile is the part of OCTMessageFile not backed by Realm.
@@ -35,6 +33,7 @@ typedef NS_OPTIONS(uint32_t, OCTFileProperties) {
  * The seconds it would take to finish the download.
  * It is calculated using the average transfer speed (observed by us)
  * over the last ten seconds.
+ * -1 means an indefinite amount of time.
  */
 @property (readonly) NSTimeInterval estimatedTimeRemaining;
 
@@ -43,11 +42,10 @@ typedef NS_OPTIONS(uint32_t, OCTFileProperties) {
  */
 @property (readonly) OCTToxFileSize bytesPerSecond;
 
-- (BOOL)pauseWithError:(NSError **)error;
-- (BOOL)resumeWithError:(NSError **)error;
-- (BOOL)cancelWithError:(NSError **)error;
+- (BOOL)pauseWithError:(NSError *_Nullable *_Nullable)error;
+- (BOOL)resumeWithError:(NSError *_Nullable *_Nullable)error;
+- (BOOL)cancelWithError:(NSError *_Nullable *_Nullable)error;
 
-- (void)beginReceivingLiveUpdatesWithBlock:(void (^)(OCTActiveFile *changedObject, OCTFileProperties changedProperties))blk
-                             forProperties:(OCTFileProperties)flags;
+- (void)beginReceivingLiveUpdatesWithBlock:(nullable OCTFileNotificationBlock)blk;
 
 @end
