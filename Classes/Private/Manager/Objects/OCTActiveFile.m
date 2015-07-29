@@ -12,6 +12,7 @@
 #import "OCTSubmanagerFiles.h"
 #import "OCTMessageFile.h"
 #import "OCTSubmanagerFiles+Private.h"
+#import "OCTSubmanagerObjects+Private.h"
 #import "OCTRealmManager.h"
 #include <sys/sysctl.h>
 
@@ -200,6 +201,7 @@ time_t _OCTGetSystemUptime(void)
             theObject.filePosition = 0;
             theObject.restorationTag = nil;
         }];
+        [[self.fileManager.dataSource managerGetRealmManager] noteMessageFileChanged:self.fileMessage];
 
         [[self.fileManager.dataSource managerGetTox] fileSendControlForFileNumber:self.fileMessage.fileNumber friendNumber:self.friendNumber control:OCTToxFileControlCancel error:nil];
     }
@@ -223,6 +225,7 @@ time_t _OCTGetSystemUptime(void)
                 theObject.restorationTag = nil;
             }
         }];
+        [[self.fileManager.dataSource managerGetRealmManager] noteMessageFileChanged:self.fileMessage];
         DDLogInfo(@"OCTActiveFile: state changed to .Loading");
     }
 
@@ -249,6 +252,7 @@ time_t _OCTGetSystemUptime(void)
             theObject.restorationTag = nil;
         }
     }];
+    [[self.fileManager.dataSource managerGetRealmManager] noteMessageFileChanged:self.fileMessage];
 
     return hasError;
 }
@@ -280,6 +284,7 @@ time_t _OCTGetSystemUptime(void)
         theObject.filePosition = 0;
         theObject.filePath = [self.receiver finalDestination];
     }];
+    [[self.fileManager.dataSource managerGetRealmManager] noteMessageFileChanged:self.fileMessage];
 }
 
 - (void)_receiveChunkNow:(NSData *)chunk atPosition:(OCTToxFileSize)p
