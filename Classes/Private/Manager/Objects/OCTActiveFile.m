@@ -189,7 +189,8 @@ time_t _OCTGetSystemUptime(void)
         *error = nil;
     }
 
-    if (self.fileMessage.fileState != OCTMessageFileStatePaused) {
+    if ((self.fileMessage.fileState != OCTMessageFileStatePaused) &&
+        (self.fileMessage.fileState != OCTMessageFileStateWaitingConfirmation) ) {
         @throw [NSException exceptionWithName:@"OCTFileException" reason:@"You cannot resume a file in this state." userInfo:nil];
         return 0;
     }
@@ -204,6 +205,7 @@ time_t _OCTGetSystemUptime(void)
         [[self.fileManager.dataSource managerGetRealmManager] noteMessageFileChanged:self.fileMessage];
 
         [[self.fileManager.dataSource managerGetTox] fileSendControlForFileNumber:self.fileMessage.fileNumber friendNumber:self.friendNumber control:OCTToxFileControlCancel error:nil];
+        return NO;
     }
 
     [self _wipeCounters];
