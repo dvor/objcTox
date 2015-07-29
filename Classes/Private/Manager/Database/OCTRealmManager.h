@@ -59,4 +59,8 @@
                                     sender:(OCTFriend *)sender
                                  messageId:(OCTToxMessageId)messageId;
 
+/* Record a change to the OCTMessageAbstract containing the messageFile.
+ * (Clients would otherwise not be notified of file transfer state changes) */
+- (void)noteMessageFileChanged:(OCTMessageFile *)messageFile;
+
 @end

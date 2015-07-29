@@ -263,6 +263,15 @@
     return messageAbstract;
 }
 
+- (void)noteMessageFileChanged:(OCTMessageFile *)messageFile
+{
+    OCTMessageAbstract *abstractMessage = [messageFile linkingObjectsOfClass:[OCTMessageAbstract className] forProperty:@"messageFile"].firstObject;
+
+    if (abstractMessage) {
+        [self.logger didChangeObject:abstractMessage];
+    }
+}
+
 #pragma mark -  Private
 
 - (RBQRealmChangeLogger *)logger
