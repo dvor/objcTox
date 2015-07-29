@@ -131,12 +131,12 @@
                          usingSender:(nonnull id<OCTFileSending>)file
                               toChat:(nonnull OCTChat *)chat
                                 type:(OCTFileUsage)type
-                             message:(__nullable OCTMessageAbstract **__nullable)msgout
-                               error:(__nullable NSError **__nullable)error;
+                             message:(OCTMessageAbstract *__nonnull *__nullable)msgout
+                               error:(NSError *__nullable *__nullable)error;
 
 - (nullable OCTActiveFile *)saveFileFromMessage:(nonnull OCTMessageAbstract *)msg
                                   usingReceiver:(nonnull id<OCTFileReceiving>)saver
-                                          error:(__nullable NSError **__nullable)error;
+                                          error:(NSError *__nullable *__nullable)error;
 
 - (nullable OCTActiveFile *)activeFileForMessage:(nonnull OCTMessageAbstract *)file;
 
