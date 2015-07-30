@@ -16,6 +16,7 @@
 #import "OCTActiveFile+Variants.h"
 #import "OCTSubmanagerFiles+Private.h"
 #import "OCTFileIO+Private.h"
+#import "DDLog.h"
 
 static NSString *_OCTSanitizeFilename(NSString *filename)
 {
@@ -200,10 +201,17 @@ void _OCTExceptFileNotInbound(void)
     friendNumber:(OCTToxFriendNumber)friendNumber
       fileNumber:(OCTToxFileNumber)fileNumber
 {
-    OCTActiveFile *f = [self activeFileForFriendNumber:friendNumber fileNumber:fileNumber];
+    NSString *key = _OCTPairFriendAndFileNumber(friendNumber, fileNumber);
+    OCTActiveFile *f = self.activeFiles[key];
+
     NSAssert(f, @"Anomaly: received a control for which we don't have an OCTActiveFile on record for.");
 
     [f _control:control];
+
+    if (control == OCTToxFileControlCancel) {
+        DDLogDebug(@"Going to deallocate %@ because of a cancel control from remote. Bye.", f);
+        [self.activeFiles removeObjectForKey:key];
+    }
 }
 
 - (void)     tox:(OCTTox *)tox fileReceiveForFileNumber:(OCTToxFileNumber)fileNumber
