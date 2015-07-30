@@ -178,7 +178,7 @@ time_t _OCTGetSystemUptime(void)
     OCTToxFileSize divisor = 0;
 
     for (int i = 0; i < AVERAGE_SECONDS; ++i) {
-        if (self.transferRateCounters[i] != -1) {
+        if ((self.transferRateCounters[i] != -1) && (i != self.rollingIndex)) {
             accumulator += self.transferRateCounters[i];
             divisor++;
         }
