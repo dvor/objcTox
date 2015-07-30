@@ -20,7 +20,12 @@
 static NSString *_OCTSanitizeFilename(NSString *filename)
 {
     // TODO: maybe get rid of nulls too
-    return [filename stringByReplacingOccurrencesOfString:@"/" withString:@"_"];
+    NSMutableString *mut = filename.mutableCopy;
+    [mut replaceOccurrencesOfString:@"/" withString:@"_" options:0 range:NSMakeRange(0, mut.length)];
+    if ([mut characterAtIndex:0] == '.') {
+        [mut replaceCharactersInRange:NSMakeRange(0, 1) withString:@"_"];
+    }
+    return mut;
 }
 
 static OCTFileUsage _OCTToxFileKindToFileUsage(OCTToxFileKind k)
