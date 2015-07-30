@@ -47,11 +47,6 @@ static NSString *_OCTPairFriendAndFileNumber(OCTToxFriendNumber friend, OCTToxFi
     return [NSString stringWithFormat:@"OCTFilePair%d,%u", friend, file];
 }
 
-static NSString *_OCTPairSelfAndFileNumber(OCTToxFileNumber file)
-{
-    return [NSString stringWithFormat:@"OCTFilePairS,%u", file];
-}
-
 void _OCTExceptFileNotMessageFile(void)
 {
     @throw [NSException exceptionWithName:@"OCTFileNotMessageFileException"
@@ -141,7 +136,9 @@ void _OCTExceptFileNotInbound(void)
         return self.activeFiles[_OCTPairFriendAndFileNumber(file.sender.friendNumber, (OCTToxFileNumber)file.messageFile.fileNumber)];
     }
     else {
-        return self.activeFiles[_OCTPairSelfAndFileNumber((OCTToxFileNumber)file.messageFile.fileNumber)];
+        // groupchats?
+        OCTFriend *friend = [file.chat.friends firstObject];
+        return self.activeFiles[_OCTPairFriendAndFileNumber(friend.friendNumber, (OCTToxFileNumber)file.messageFile.fileNumber)];
     }
 }
 
@@ -154,12 +151,7 @@ void _OCTExceptFileNotInbound(void)
 
 - (nullable OCTActiveFile *)activeFileForFriendNumber:(OCTToxFriendNumber)fn fileNumber:(OCTToxFileNumber)file
 {
-    if (fn != -1) {
-        return self.activeFiles[_OCTPairFriendAndFileNumber(fn, file)];
-    }
-    else {
-        return self.activeFiles[_OCTPairSelfAndFileNumber(file)];
-    }
+    return self.activeFiles[_OCTPairFriendAndFileNumber(fn, file)];
 }
 
 - (nonnull OCTActiveFile *)_createSendingFileForFriend:(OCTFriend *)f message:(OCTMessageFile *)msg provider:(id<OCTFileSending>)prov
