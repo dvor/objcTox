@@ -104,6 +104,12 @@ time_t _OCTGetSystemUptime(void)
     return nil;
 }
 
+- (void)_control:(OCTToxFileControl)ctl
+{
+    @throw [NSException exceptionWithName:@"OCTFileException" reason:@"Only subclasses of OCTActiveFile can be used." userInfo:nil];
+    return;
+}
+
 - (BOOL)_openConduitIfNeeded
 {
     if (! self.isConduitOpen) {
@@ -277,7 +283,7 @@ time_t _OCTGetSystemUptime(void)
         // TODO make OCTFileError a constant symbol
 
         if (error) {
-            NSString *failureReason = [NSString stringWithFormat:@"This file cannot be resumed while it is in this state. (Current state: %u. Valid states: %u.)", self.fileMessage.fileState, OCTMessageFileStatePaused];
+            NSString *failureReason = [NSString stringWithFormat:@"This file cannot be resumed while it is in this state. (Current state: %ld. Valid states: %ld.)", (long)self.fileMessage.fileState, (long)OCTMessageFileStatePaused];
             *error = [NSError errorWithDomain:@"OCTFileError" code:-1 userInfo:@{NSLocalizedFailureReasonErrorKey : failureReason}];
         }
 
@@ -339,7 +345,7 @@ time_t _OCTGetSystemUptime(void)
         *error = nil;
     }
 
-    ok = [[self.fileManager.dataSource managerGetTox] fileSendControlForFileNumber:self.fileMessage.fileNumber friendNumber:self.friendNumber control:OCTToxFileControlCancel error:&error];
+    ok = [[self.fileManager.dataSource managerGetTox] fileSendControlForFileNumber:self.fileMessage.fileNumber friendNumber:self.friendNumber control:OCTToxFileControlCancel error:error];
 
     if (! ok) {
         return NO;
