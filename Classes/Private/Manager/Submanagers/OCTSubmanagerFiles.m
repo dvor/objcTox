@@ -198,7 +198,13 @@ void _OCTExceptFileNotInbound(void)
 
 - (void)     tox:(OCTTox *)tox fileReceiveControl:(OCTToxFileControl)control
     friendNumber:(OCTToxFriendNumber)friendNumber
-      fileNumber:(OCTToxFileNumber)fileNumber {}
+      fileNumber:(OCTToxFileNumber)fileNumber
+{
+    OCTActiveFile *f = [self activeFileForFriendNumber:friendNumber fileNumber:fileNumber];
+    NSAssert(f, @"Anomaly: received a control for which we don't have an OCTActiveFile on record for.");
+
+    [f _control:control];
+}
 
 - (void)     tox:(OCTTox *)tox fileReceiveForFileNumber:(OCTToxFileNumber)fileNumber
     friendNumber:(OCTToxFriendNumber)friendNumber

@@ -34,6 +34,7 @@
 - (id<OCTFileConduit>)_conduit;
 
 - (void)_sendProgressUpdateNow;
+- (void)_control:(OCTToxFileControl)ctl;
 
 @end
 
