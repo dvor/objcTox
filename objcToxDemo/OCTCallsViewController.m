@@ -18,6 +18,7 @@
 
 @property (strong, nonatomic) RBQFetchedResultsController *resultsController;
 @property (strong, nonatomic) OCTCall *selectedCall;
+@property (strong, nonatomic) UIView *previewVideoView;
 
 @end
 
@@ -147,6 +148,10 @@
         [sheet bk_addButtonWithTitle:@"Use default speakers" handler:^{
             [weakSelf useDefaultSpeaker];
         }];
+
+        [sheet bk_addButtonWithTitle:@"Video preview" handler:^{
+            [weakSelf showVideoPreview];
+        }];
     }];
 
 }
@@ -239,6 +244,20 @@
 - (void)unmuteFriend
 {
     [self.manager.calls sendCallControl:OCTToxAVCallControlUnmuteAudio toCall:self.selectedCall error:nil];
+}
+
+- (void)showVideoPreview
+{
+    CALayer *layer = [self.manager.calls videoCallPreview];
+
+    self.previewVideoView = [[UIView alloc] initWithFrame:CGRectMake(0, 0, 300, 300)];
+    self.previewVideoView.backgroundColor = [UIColor blackColor];
+
+    layer.frame = self.previewVideoView.bounds;
+
+    [self.previewVideoView.layer addSublayer:layer];
+
+    [self.view addSubview:self.previewVideoView];
 }
 
 @end

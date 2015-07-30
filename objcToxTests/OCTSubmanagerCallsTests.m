@@ -23,6 +23,7 @@
 
 @property (strong, nonatomic) OCTToxAV *toxAV;
 @property (strong, nonatomic) OCTAudioEngine *audioEngine;
+@property (strong, nonatomic) OCTVideoEngine *videoEngine;
 @property (weak, nonatomic) id<OCTSubmanagerDataSource> dataSource;
 @property (strong, nonatomic) OCTCallTimer *timer;
 
@@ -47,6 +48,7 @@
 @property (strong, nonatomic) OCTSubmanagerCalls *callManager;
 @property (strong, nonatomic) OCTTox *tox;
 @property (strong, nonatomic) id mockedAudioEngine;
+@property (strong, nonatomic) id mockedVideoEngine;
 @property (strong, nonatomic) id mockedToxAV;
 
 @end
@@ -66,6 +68,10 @@
     self.mockedAudioEngine = OCMPartialMock(audioEngine);
     self.callManager.audioEngine = self.mockedAudioEngine;
 
+    OCTVideoEngine *videoEngine = [OCTVideoEngine new];
+    self.mockedVideoEngine = OCMPartialMock(videoEngine);
+    self.callManager.videoEngine = self.mockedVideoEngine;
+
     self.mockedToxAV = OCMClassMock([OCTToxAV class]);
     self.callManager.toxAV = self.mockedToxAV;
 
@@ -81,6 +87,7 @@
     self.tox = nil;
     self.mockedAudioEngine = nil;
     self.mockedToxAV = nil;
+    self.mockedVideoEngine = nil;
     [super tearDown];
 }
 
@@ -93,6 +100,9 @@
 {
     OCMStub([self.mockedAudioEngine new]).andReturn(self.mockedAudioEngine);
     OCMStub([self.mockedAudioEngine setupWithError:[OCMArg anyObjectRef]]).andReturn(YES);
+
+    OCMStub([self.mockedVideoEngine new]).andReturn(self.mockedVideoEngine);
+    OCMStub([self.mockedVideoEngine setupWithError:[OCMArg anyObjectRef]]).andReturn(YES);
 
     XCTAssertTrue([self.callManager setupWithError:nil]);
 }
@@ -157,7 +167,6 @@
 
 - (void)testAnswerCallSuccess
 {
-    self.callManager.audioEngine = [OCTAudioEngine new];
     OCMStub([self.mockedAudioEngine startAudioFlow:[OCMArg anyObjectRef]]).andReturn(YES);
 
     [self createFriendWithFriendNumber:1234];
