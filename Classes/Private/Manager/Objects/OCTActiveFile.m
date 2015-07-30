@@ -252,7 +252,7 @@ time_t _OCTGetSystemUptime(void)
 
 - (void)_resumeFile:(OCTMessageFile *)file
 {
-    [[self.fileManager.dataSource managerGetRealmManager] updateObject:self.fileMessage withBlock:^(OCTMessageFile *theObject) {
+    [[self.fileManager.dataSource managerGetRealmManager] updateObject:file withBlock:^(OCTMessageFile *theObject) {
         theObject.fileState = OCTMessageFileStateLoading;
         theObject.pauseFlags = OCTPauseFlagsNobody;
         theObject.filePosition = self.bytesMoved;
@@ -266,7 +266,7 @@ time_t _OCTGetSystemUptime(void)
             theObject.restorationTag = nil;
         }
     }];
-    [[self.fileManager.dataSource managerGetRealmManager] noteMessageFileChanged:self.fileMessage];
+    [[self.fileManager.dataSource managerGetRealmManager] noteMessageFileChanged:file];
 }
 
 #pragma mark - Public API - Controls
