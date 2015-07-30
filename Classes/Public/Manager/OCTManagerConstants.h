@@ -28,7 +28,7 @@ typedef NS_ENUM(NSInteger, OCTMessageFileState) {
     OCTMessageFileStateLoading,
 
     /**
-     * Downloading or uploading of file is paused.
+     * Downloading or uploading of file is paused by us.
      * Resumable.
      */
     OCTMessageFileStatePaused,
@@ -66,4 +66,14 @@ typedef NS_ENUM(NSInteger, OCTFileUsage) {
      * Unimplemented.
      */
     OCTFileUsageInlineVideo,
+};
+
+/* note: signed type is being used because of Realm. */
+typedef NS_OPTIONS(NSInteger, OCTPauseFlags) {
+    OCTPauseFlagsSelf = 1,
+    OCTPauseFlagsOther = 1 << 1,
+
+        /* These are for convenience. */
+        OCTPauseFlagsNobody = 0,
+        OCTPauseFlagsBoth = 3,
 };

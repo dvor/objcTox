@@ -25,6 +25,13 @@
 @property OCTMessageFileState fileState;
 
 /**
+ * Who is holding up this file transfer.
+ * Can be .Self, .Other, .Both, or .Nobody,
+ * but it's undefined until fileState is OCTMessageFileStatePaused.
+ */
+@property OCTPauseFlags pauseFlags;
+
+/**
  * How the file should be displayed, if you so choose to support that.
  * Make sure to check fileType before using.
  */
