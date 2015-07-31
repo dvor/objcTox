@@ -252,19 +252,18 @@ time_t _OCTGetSystemUptime(void)
 
 - (void)_resumeFile:(OCTMessageFile *)file
 {
+    DDLogDebug(@"archiving resume data; if we die we're starting at offset %lld", self.bytesMoved);
+
+    NSData *conduitData = nil;
+    if ([self._conduit conformsToProtocol:@protocol(NSCoding)]) {
+        conduitData = [NSKeyedArchiver archivedDataWithRootObject:self._conduit];
+    }
+
     [[self.fileManager.dataSource managerGetRealmManager] updateObject:file withBlock:^(OCTMessageFile *theObject) {
         theObject.fileState = OCTMessageFileStateLoading;
         theObject.pauseFlags = OCTPauseFlagsNobody;
         theObject.filePosition = self.bytesMoved;
-
-        DDLogDebug(@"archiving resume data; if we die we're starting at offset %lld", theObject.filePosition);
-
-        if ([self._conduit conformsToProtocol:@protocol(NSCoding)]) {
-            theObject.restorationTag = [NSKeyedArchiver archivedDataWithRootObject:self._conduit];
-        }
-        else {
-            theObject.restorationTag = nil;
-        }
+        theObject.restorationTag = conduitData;
     }];
     [[self.fileManager.dataSource managerGetRealmManager] noteMessageFileChanged:file];
 }
@@ -313,7 +312,7 @@ time_t _OCTGetSystemUptime(void)
     }
     else {
         [self _resumeFile:self.fileMessage];
-        DDLogInfo(@"OCTActiveFile: state changed to .Loading");
+        DDLogInfo(@"OCTActiveFile: changing state to .Loading soon");
     }
 
     return YES;

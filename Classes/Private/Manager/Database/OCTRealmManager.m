@@ -268,7 +268,9 @@
     OCTMessageAbstract *abstractMessage = [messageFile linkingObjectsOfClass:[OCTMessageAbstract className] forProperty:@"messageFile"].firstObject;
 
     if (abstractMessage) {
-        [self.logger didChangeObject:abstractMessage];
+        [self updateObject:abstractMessage withBlock:^(OCTMessageAbstract *theObject) {
+            theObject.messageFile = messageFile;
+        }];
     }
 }
 
