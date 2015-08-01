@@ -145,7 +145,10 @@ time_t _OCTGetSystemUptime(void)
 
 - (void)_sendProgressUpdateNow
 {
-    if (self.notificationBlock) {
+    // don't post a notification if we're paused
+    // (sometimes one manages to sneak in after we've updated the state in realm,
+    //  and it messes up my client code...)
+    if (self.notificationBlock && (self.fileMessage.fileState == OCTMessageFileStateLoading)) {
         self.notificationBlock(self);
     }
 }
@@ -233,19 +236,18 @@ time_t _OCTGetSystemUptime(void)
 {
     DDLogDebug(@"Marking file %@ as PAUSED.", file);
 
+    DDLogDebug(@"archiving resume data; if we die we're starting at offset %lld", self.bytesMoved);
+
+    NSData *conduitData = nil;
+    if ([self._conduit conformsToProtocol:@protocol(NSCoding)]) {
+        conduitData = [NSKeyedArchiver archivedDataWithRootObject:self._conduit];
+    }
+
     [[self.fileManager.dataSource managerGetRealmManager] updateObject:file withBlock:^(OCTMessageFile *theObject) {
         theObject.fileState = OCTMessageFileStatePaused;
         theObject.pauseFlags = flag;
         theObject.filePosition = self.bytesMoved;
-
-        DDLogDebug(@"archiving resume data; if we die we're starting at offset %lld", theObject.filePosition);
-
-        if ([self._conduit conformsToProtocol:@protocol(NSCoding)]) {
-            theObject.restorationTag = [NSKeyedArchiver archivedDataWithRootObject:self._conduit];
-        }
-        else {
-            theObject.restorationTag = nil;
-        }
+        theObject.restorationTag = conduitData;
     }];
     [[self.fileManager.dataSource managerGetRealmManager] noteMessageFileChanged:file];
 }
