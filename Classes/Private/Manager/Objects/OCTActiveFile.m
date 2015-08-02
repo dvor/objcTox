@@ -64,9 +64,11 @@ time_t _OCTGetSystemUptime(void)
 
 - (void)_incrementRollingIndex:(long)n
 {
-    for (int i = 0; i < n; ++i) {
-        self.rollingIndex = (self.rollingIndex + 1) % AVERAGE_SECONDS;
-        self.transferRateCounters[self.rollingIndex] = 0;
+    @synchronized(self) {
+        for (int i = 0; i < n; ++i) {
+            self.rollingIndex = (self.rollingIndex + 1) % AVERAGE_SECONDS;
+            self.transferRateCounters[self.rollingIndex] = 0;
+        }
     }
 }
 
@@ -90,10 +92,12 @@ time_t _OCTGetSystemUptime(void)
 
 - (void)_wipeCounters
 {
-    for (int i = 0; i < AVERAGE_SECONDS; ++i) {
-        self.transferRateCounters[i] = -1;
+    @synchronized(self) {
+        for (int i = 0; i < AVERAGE_SECONDS; ++i) {
+            self.transferRateCounters[i] = -1;
+        }
+        self.lastCountedTime = _OCTGetSystemUptime();
     }
-    self.lastCountedTime = _OCTGetSystemUptime();
 }
 
 #pragma mark - Private API
@@ -148,9 +152,16 @@ time_t _OCTGetSystemUptime(void)
     // don't post a notification if we're paused
     // (sometimes one manages to sneak in after we've updated the state in realm,
     //  and it messes up my client code...)
-    if (self.notificationBlock && (self.fileMessage.fileState == OCTMessageFileStateLoading)) {
-        self.notificationBlock(self);
-    }
+    //    if (self.progressUpdatesDisabled)
+    //        return;
+    //
+    //    if (self.notificationBlock && self.fileMessage.fileState == OCTMessageFileStateLoading) {
+    //        self.progressUpdatesDisabled = YES;
+    //        dispatch_async(dispatch_get_main_queue(), ^{
+    //            self.notificationBlock(self);
+    //            self.progressUpdatesDisabled = NO;
+    //        });
+    //    }
 }
 
 #pragma mark - Public API
@@ -180,10 +191,12 @@ time_t _OCTGetSystemUptime(void)
     OCTToxFileSize accumulator = 0;
     OCTToxFileSize divisor = 0;
 
-    for (int i = 0; i < AVERAGE_SECONDS; ++i) {
-        if ((self.transferRateCounters[i] != -1) && (i != self.rollingIndex)) {
-            accumulator += self.transferRateCounters[i];
-            divisor++;
+    @synchronized(self) {
+        for (int i = 0; i < AVERAGE_SECONDS; ++i) {
+            if ((self.transferRateCounters[i] != -1) && (i != self.rollingIndex)) {
+                accumulator += self.transferRateCounters[i];
+                divisor++;
+            }
         }
     }
 
@@ -291,7 +304,12 @@ time_t _OCTGetSystemUptime(void)
         return NO;
     }
 
-    if (! [self _openConduitIfNeeded]) {
+    __block BOOL openOK = NO;
+    dispatch_sync(self.fileManager.queue, ^{
+        openOK = [self _openConduitIfNeeded];
+    });
+
+    if (! openOK) {
         DDLogWarn(@"OCTActiveFile WARNING: Couldn't prepare the conduit. The file transfer will be cancelled.");
 
         [[self.fileManager.dataSource managerGetTox] fileSendControlForFileNumber:self.fileMessage.fileNumber friendNumber:self.friendNumber control:OCTToxFileControlCancel error:nil];
@@ -333,7 +351,6 @@ time_t _OCTGetSystemUptime(void)
         return NO;
     }
     else {
-        [self _closeConduitIfNeeded];
         [self _markFileAsPaused:self.fileMessage withFlags:self.fileMessage.pauseFlags | OCTPauseFlagsSelf];
         return YES;
     }
@@ -352,7 +369,9 @@ time_t _OCTGetSystemUptime(void)
         return NO;
     }
     else {
-        [self _closeConduitIfNeeded];
+        dispatch_async(self.fileManager.queue, ^{
+            [self _closeConduitIfNeeded];
+        });
         [self _markFileAsCancelled:self.fileMessage];
         return YES;
     }
@@ -384,36 +403,39 @@ time_t _OCTGetSystemUptime(void)
         }
         else {
             DDLogWarn(@"OCTActiveInBoundFile WARNING: receiver %@ does not support seeking, but we received out of order file chunk for position %llu."
-                      "(I think the file position is %llu.) The file transfer will be corrupted.", self.receiver, p, self.bytesMoved + 1);
+                      "(I think the file position is %llu.) The file will be corrupted.", self.receiver, p, self.bytesMoved + 1);
         }
     }
 
-    [self _countBytes:chunk.length];
     [self.receiver writeBytes:chunk.length fromBuffer:chunk.bytes];
+    [self _countBytes:chunk.length];
     [self _sendProgressUpdateNow];
 }
 
 - (void)_control:(OCTToxFileControl)ctl
 {
     switch (ctl) {
-        case OCTToxFileControlCancel:
+        case OCTToxFileControlCancel: {
             DDLogDebug(@"_control: obeying cancel message from remote.");
-            [self _closeConduitIfNeeded];
+            dispatch_async(self.fileManager.queue, ^{
+                [self _closeConduitIfNeeded];
+            });
             [self _markFileAsCancelled:self.fileMessage];
             break;
+        }
         case OCTToxFileControlPause:
             DDLogDebug(@"_control: obeying pause message from remote.");
-            [self _closeConduitIfNeeded];
             [self _markFileAsPaused:self.fileMessage withFlags:self.fileMessage.pauseFlags | OCTPauseFlagsOther];
             break;
         case OCTToxFileControlResume: {
             DDLogDebug(@"_control: obeying resume message from remote.");
             if (self.fileMessage.pauseFlags == OCTPauseFlagsOther) {
-                [self _openConduitIfNeeded];
+                dispatch_sync(self.fileManager.queue, ^{
+                    [self _openConduitIfNeeded];
+                });
                 [self _resumeFile:self.fileMessage];
             }
             else {
-                [self _closeConduitIfNeeded];
                 [self _markFileAsPaused:self.fileMessage withFlags:OCTPauseFlagsSelf];
             }
             break;

@@ -150,8 +150,8 @@ void (*_tox_self_get_public_key)(const Tox *tox, uint8_t *public_key);
             return;
         }
 
-        dispatch_queue_t queue = dispatch_queue_create("me.dvor.objcTox.OCTToxQueue", NULL);
-        self.timer = dispatch_source_create(DISPATCH_SOURCE_TYPE_TIMER, 0, 0, queue);
+        self.queue = dispatch_queue_create("me.dvor.objcTox.OCTToxQueue", NULL);
+        self.timer = dispatch_source_create(DISPATCH_SOURCE_TYPE_TIMER, 0, 0, self.queue);
 
         uint64_t interval = tox_iteration_interval(self.tox) * (NSEC_PER_SEC / 1000);
         dispatch_source_set_timer(self.timer, dispatch_walltime(NULL, 0), interval, interval / 5);

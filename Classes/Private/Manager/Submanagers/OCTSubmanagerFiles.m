@@ -77,6 +77,8 @@ void _OCTExceptFileNotInbound(void)
 @interface OCTSubmanagerFiles ()
 
 @property (weak, nonatomic) id<OCTSubmanagerDataSource> dataSource;
+@property (weak) dispatch_queue_t queue;
+
 @property (strong) NSMutableDictionary<NSString *, OCTActiveFile *> *activeFiles;
 
 @end
@@ -190,8 +192,10 @@ void _OCTExceptFileNotInbound(void)
     NSAssert([inboundFile isMemberOfClass:[OCTActiveInboundFile class]], @"Received a chunk for a bad file %@!", inboundFile);
 
     if (chunk.length == 0) {
-        [inboundFile _completeFileTransferAndClose];
-        [self.activeFiles removeObjectForKey:_OCTPairFriendAndFileNumber(friendNumber, fileNumber)];
+        dispatch_async(dispatch_get_main_queue(), ^{
+            [inboundFile _completeFileTransferAndClose];
+            [self.activeFiles removeObjectForKey:_OCTPairFriendAndFileNumber(friendNumber, fileNumber)];
+        });
     }
     else {
         [inboundFile _receiveChunkNow:chunk atPosition:position];

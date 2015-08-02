@@ -93,6 +93,7 @@
     _bootstrap = [self createSubmanagerWithClass:[OCTSubmanagerBootstrap class]];
     _chats = [self createSubmanagerWithClass:[OCTSubmanagerChats class]];
     _files = [self createSubmanagerWithClass:[OCTSubmanagerFiles class]];
+    _files.queue = _tox.queue;
     _friends = [self createSubmanagerWithClass:[OCTSubmanagerFriends class]];
     _objects = [self createSubmanagerWithClass:[OCTSubmanagerObjects class]];
     _user = [self createSubmanagerWithClass:[OCTSubmanagerUser class]];
@@ -154,6 +155,11 @@
 - (id<OCTFileStorageProtocol>)managerGetFileStorage
 {
     return self.configuration.fileStorage;
+}
+
+- (dispatch_queue_t)managerGetToxQueue
+{
+    return self.tox.queue;
 }
 
 #pragma mark -  Private

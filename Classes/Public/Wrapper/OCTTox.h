@@ -17,6 +17,11 @@
 @property (weak, nonatomic) id<OCTToxDelegate> delegate;
 
 /**
+ * A GCD queue that can be used to run synchronously with the Tox loop.
+ */
+@property (strong) dispatch_queue_t queue;
+
+/**
  * Indicates if we are connected to the DHT.
  */
 @property (assign, nonatomic, readonly) OCTToxConnectionStatus connectionStatus;
