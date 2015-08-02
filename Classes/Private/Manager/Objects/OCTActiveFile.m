@@ -394,7 +394,7 @@ time_t _OCTGetSystemUptime(void)
     [self _markFileAsCompleted:self.fileMessage withFinalDestination:[self.receiver finalDestination]];
 }
 
-- (void)_receiveChunkNow:(NSData *)chunk atPosition:(OCTToxFileSize)p
+- (void)_receiveChunkNow:(const uint8_t *)chunk length:(size_t)length atPosition:(OCTToxFileSize)p
 {
     // NSLog(@"_receiveChunkNow at %ld", _OCTGetSystemUptime());
     if (p != self.bytesMoved + 1) {
@@ -407,8 +407,8 @@ time_t _OCTGetSystemUptime(void)
         }
     }
 
-    [self.receiver writeBytes:chunk.length fromBuffer:chunk.bytes];
-    [self _countBytes:chunk.length];
+    [self.receiver writeBytes:length fromBuffer:chunk];
+    [self _countBytes:length];
     [self _sendProgressUpdateNow];
 }
 

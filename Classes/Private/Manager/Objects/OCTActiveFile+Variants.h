@@ -51,6 +51,6 @@
 @property (strong) id<OCTFileReceiving> receiver;
 
 - (void)_completeFileTransferAndClose;
-- (void)_receiveChunkNow:(NSData *)chunk atPosition:(OCTToxFileSize)p;
+- (void)_receiveChunkNow:(const uint8_t *)chunk length:(size_t)length atPosition:(OCTToxFileSize)p;
 
 @end

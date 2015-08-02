@@ -1747,15 +1747,7 @@ void fileReceiveChunkCallback(
 {
     OCTTox *tox = (__bridge OCTTox *)(userData);
 
-    NSData *chunk = nil;
-
-    if (length) {
-        chunk = [NSData dataWithBytes:cData length:length];
+    if ([tox.delegate respondsToSelector:@selector(tox:fileReceiveChunk:length:fileNumber:friendNumber:position:)]) {
+        [tox.delegate tox:tox fileReceiveChunk:cData length:length fileNumber:fileNumber friendNumber:friendNumber position:position];
     }
-
-    dispatch_async(dispatch_get_main_queue(), ^{
-        if ([tox.delegate respondsToSelector:@selector(tox:fileReceiveChunk:fileNumber:friendNumber:position:)]) {
-            [tox.delegate tox:tox fileReceiveChunk:chunk fileNumber:fileNumber friendNumber:friendNumber position:position];
-        }
-    });
 }
