@@ -182,7 +182,8 @@ void _OCTExceptFileNotInbound(void)
 
 - (void)tox:(OCTTox *)tox fileChunkRequestForFileNumber:(OCTToxFileNumber)fileNumber friendNumber:(OCTToxFriendNumber)friendNumber position:(OCTToxFileSize)position length:(size_t)length {}
 
-- (void)     tox:(OCTTox *)tox fileReceiveChunk:(NSData *)chunk
+- (void)     tox:(OCTTox *)tox fileReceiveChunk:(const uint8_t *)chunk
+          length:(size_t)length
       fileNumber:(OCTToxFileNumber)fileNumber
     friendNumber:(OCTToxFriendNumber)friendNumber
         position:(OCTToxFileSize)position
@@ -191,14 +192,14 @@ void _OCTExceptFileNotInbound(void)
 
     NSAssert([inboundFile isMemberOfClass:[OCTActiveInboundFile class]], @"Received a chunk for a bad file %@!", inboundFile);
 
-    if (chunk.length == 0) {
+    if (length == 0) {
         dispatch_async(dispatch_get_main_queue(), ^{
             [inboundFile _completeFileTransferAndClose];
             [self.activeFiles removeObjectForKey:_OCTPairFriendAndFileNumber(friendNumber, fileNumber)];
         });
     }
     else {
-        [inboundFile _receiveChunkNow:chunk atPosition:position];
+        [inboundFile _receiveChunkNow:chunk length:length atPosition:position];
     }
 }
 

@@ -168,7 +168,8 @@
  * @param friendNumber The friend number of the friend who is sending the file.
  * @param position The file position of the first byte in data.
  */
-- (void)     tox:(OCTTox *)tox fileReceiveChunk:(NSData *)chunk
+- (void)     tox:(OCTTox *)tox fileReceiveChunk:(const uint8_t *)chunk
+          length:(size_t)length
       fileNumber:(OCTToxFileNumber)fileNumber
     friendNumber:(OCTToxFriendNumber)friendNumber
         position:(OCTToxFileSize)position;
