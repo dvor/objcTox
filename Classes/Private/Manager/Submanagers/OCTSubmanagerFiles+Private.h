@@ -13,5 +13,6 @@
 @interface OCTSubmanagerFiles (Private) <OCTToxDelegate>
 
 @property (weak, nonatomic) id<OCTSubmanagerDataSource> dataSource;
+@property (weak) dispatch_queue_t queue;
 
 @end

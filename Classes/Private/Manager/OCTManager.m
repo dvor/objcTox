@@ -94,6 +94,7 @@
     _chats = chats;
 
     OCTSubmanagerFiles *files = [OCTSubmanagerFiles new];
+    files.queue = self.tox.queue;
     files.dataSource = self;
     _files = files;
 
@@ -167,6 +168,11 @@
 - (id<OCTFileStorageProtocol>)managerGetFileStorage
 {
     return self.configuration.fileStorage;
+}
+
+- (dispatch_queue_t)managerGetToxQueue
+{
+    return self.tox.queue;
 }
 
 #pragma mark -  Private
