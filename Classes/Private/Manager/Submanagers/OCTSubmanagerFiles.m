@@ -192,6 +192,12 @@ void _OCTExceptFileNotInbound(void)
     [self.pendingNotifications removeAllObjects];
 }
 
+- (void)removeFile:(OCTActiveFile *)file
+{
+    [self.pendingNotifications removeObject:file];
+    [self.activeFiles removeObjectForKey:_OCTPairFriendAndFileNumber(file.friendNumber, file.fileMessage.fileNumber)];
+}
+
 #pragma mark - OCTToxDelegate.
 
 - (void)tox:(OCTTox *)tox fileChunkRequestForFileNumber:(OCTToxFileNumber)fileNumber friendNumber:(OCTToxFriendNumber)friendNumber position:(OCTToxFileSize)position length:(size_t)length {}
@@ -207,10 +213,7 @@ void _OCTExceptFileNotInbound(void)
     NSAssert([inboundFile isMemberOfClass:[OCTActiveInboundFile class]], @"Received a chunk for a bad file %@!", inboundFile);
 
     if (length == 0) {
-        dispatch_async(dispatch_get_main_queue(), ^{
-            [inboundFile _completeFileTransferAndClose];
-            [self.activeFiles removeObjectForKey:_OCTPairFriendAndFileNumber(friendNumber, fileNumber)];
-        });
+        [inboundFile _completeFileTransferAndClose];
     }
     else {
         [inboundFile _receiveChunkNow:chunk length:length atPosition:position];
@@ -227,11 +230,6 @@ void _OCTExceptFileNotInbound(void)
     NSAssert(f, @"Anomaly: received a control for which we don't have an OCTActiveFile on record for.");
 
     [f _control:control];
-
-    if (control == OCTToxFileControlCancel) {
-        DDLogDebug(@"Going to deallocate %@ because of a cancel control from remote. Bye.", f);
-        [self.activeFiles removeObjectForKey:key];
-    }
 }
 
 - (void)     tox:(OCTTox *)tox fileReceiveForFileNumber:(OCTToxFileNumber)fileNumber

@@ -57,6 +57,7 @@ time_t _OCTGetSystemUptime(void)
 
 - (void)dealloc
 {
+    DDLogDebug(@"OCTActiveFile dealloc");
     free(self.transferRateCounters);
 }
 
@@ -359,6 +360,10 @@ time_t _OCTGetSystemUptime(void)
     else {
         dispatch_async(self.fileManager.queue, ^{
             [self _closeConduitIfNeeded];
+
+            dispatch_async(dispatch_get_main_queue(), ^{
+                [self.fileManager removeFile:self];
+            });
         });
         [self _markFileAsCancelled:self.fileMessage];
         return YES;
@@ -379,7 +384,10 @@ time_t _OCTGetSystemUptime(void)
     [self.receiver transferWillBecomeInactive:self];
     [self.receiver transferWillComplete:self];
 
-    [self _markFileAsCompleted:self.fileMessage withFinalDestination:[self.receiver finalDestination]];
+    dispatch_async(dispatch_get_main_queue(), ^{
+        [self _markFileAsCompleted:self.fileMessage withFinalDestination:[self.receiver finalDestination]];
+        [self.fileManager removeFile:self];
+    });
 }
 
 - (void)_receiveChunkNow:(const uint8_t *)chunk length:(size_t)length atPosition:(OCTToxFileSize)p
@@ -407,6 +415,10 @@ time_t _OCTGetSystemUptime(void)
             DDLogDebug(@"_control: obeying cancel message from remote.");
             dispatch_async(self.fileManager.queue, ^{
                 [self _closeConduitIfNeeded];
+
+                dispatch_async(dispatch_get_main_queue(), ^{
+                    [self.fileManager removeFile:self];
+                });
             });
             [self _markFileAsCancelled:self.fileMessage];
             break;

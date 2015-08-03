@@ -17,4 +17,6 @@
 - (void)sendProgressNotificationsNow;
 - (void)scheduleProgressNotificationForFile:(OCTActiveFile *)f;
 
+- (void)removeFile:(OCTActiveFile *)file;
+
 @end
