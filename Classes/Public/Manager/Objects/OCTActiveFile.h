@@ -22,7 +22,7 @@ typedef void (^OCTFileNotificationBlock)(OCTActiveFile *__nonnull);
  * How many bytes have been downloaded/uploaded so far.
  * Used in calculations for @progress and @estimatedTimeRemaining.
  */
-@property (nonatomic, readonly) OCTToxFileSize bytesMoved;
+@property (readonly) OCTToxFileSize bytesMoved;
 
 /**
  * How much of transfer has been completed, on a scale from 0.0 to 1.0.
