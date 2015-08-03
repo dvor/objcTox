@@ -147,16 +147,8 @@ time_t _OCTGetSystemUptime(void)
     // don't post a notification if we're paused
     // (sometimes one manages to sneak in after we've updated the state in realm,
     //  and it messes up my client code...)
-    if (self.progressUpdatesDisabled) {
-        return;
-    }
-
-    if (self.notificationBlock) {
-        self.progressUpdatesDisabled = YES;
-        dispatch_async(dispatch_get_main_queue(), ^{
-            self.notificationBlock(self);
-            self.progressUpdatesDisabled = NO;
-        });
+    if (self.notificationBlock && (self.fileMessage.fileState == OCTMessageFileStateLoading)) {
+        self.notificationBlock(self);
     }
 }
 
@@ -405,7 +397,7 @@ time_t _OCTGetSystemUptime(void)
 
     [self.receiver writeBytes:length fromBuffer:chunk];
     [self _countBytes:length];
-    [self _sendProgressUpdateNow];
+    [self.fileManager scheduleProgressNotificationForFile:self];
 }
 
 - (void)_control:(OCTToxFileControl)ctl

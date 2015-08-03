@@ -71,8 +71,6 @@
     }
 
     _tox = [[OCTTox alloc] initWithOptions:configuration.options savedData:savedData error:nil];
-    _tox.delegate = self;
-    [_tox start];
 
     if (! savedData) {
         [self saveTox];
@@ -94,7 +92,6 @@
     _chats = chats;
 
     OCTSubmanagerFiles *files = [OCTSubmanagerFiles new];
-    files.queue = self.tox.queue;
     files.dataSource = self;
     _files = files;
 
@@ -105,6 +102,10 @@
     OCTSubmanagerObjects *objects = [OCTSubmanagerObjects new];
     objects.dataSource = self;
     _objects = objects;
+
+    _tox.delegate = self;
+    [_tox start];
+    files.queue = self.tox.queue;
 
     _toxSaveFileLock = [NSObject new];
 
@@ -243,6 +244,13 @@
                                          userInfo:@{ @"NSError" : error }];
         }
     }
+}
+
+#pragma mark - OCTToxDelegate
+
+- (void)toxDidIterate:(OCTTox *)tox
+{
+    [self.files sendProgressNotificationsNow];
 }
 
 @end
