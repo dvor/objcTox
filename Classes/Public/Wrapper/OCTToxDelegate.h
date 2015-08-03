@@ -20,6 +20,12 @@
 @optional
 
 /**
+ * Called at the end of a tox_iterate run. It's mainly used to coalesce
+ * file progress notifications.
+ */
+- (void)toxDidIterate:(OCTTox *)tox;
+
+/**
  * User connection status changed.
  *
  * @param connectionStatus New connection status of the user.

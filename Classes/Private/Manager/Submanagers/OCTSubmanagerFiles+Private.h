@@ -14,4 +14,7 @@
 @property (weak, nonatomic) id<OCTSubmanagerDataSource> dataSource;
 @property (weak) dispatch_queue_t queue;
 
+- (void)sendProgressNotificationsNow;
+- (void)scheduleProgressNotificationForFile:(OCTActiveFile *)f;
+
 @end

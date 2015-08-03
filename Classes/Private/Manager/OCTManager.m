@@ -74,14 +74,7 @@
         savedData = [NSData dataWithContentsOfFile:savedDataPath];
     }
 
-    _tox = [[OCTTox alloc] initWithOptions:configuration.options savedData:savedData error:error];
-
-    if (! _tox) {
-        return nil;
-    }
-
-    _tox.delegate = self;
-    [_tox start];
+    _tox = [[OCTTox alloc] initWithOptions:configuration.options savedData:savedData error:nil];
 
     if (! savedData) {
         [self saveTox];
@@ -97,6 +90,31 @@
     _friends = [self createSubmanagerWithClass:[OCTSubmanagerFriends class]];
     _objects = [self createSubmanagerWithClass:[OCTSubmanagerObjects class]];
     _user = [self createSubmanagerWithClass:[OCTSubmanagerUser class]];
+
+    OCTSubmanagerFriends *friends = [OCTSubmanagerFriends new];
+    friends.dataSource = self;
+    [friends configure];
+    _friends = friends;
+
+    OCTSubmanagerChats *chats = [OCTSubmanagerChats new];
+    chats.dataSource = self;
+    _chats = chats;
+
+    OCTSubmanagerFiles *files = [OCTSubmanagerFiles new];
+    files.dataSource = self;
+    _files = files;
+
+    OCTSubmanagerAvatars *avatars = [OCTSubmanagerAvatars new];
+    avatars.dataSource = self;
+    _avatars = avatars;
+
+    OCTSubmanagerObjects *objects = [OCTSubmanagerObjects new];
+    objects.dataSource = self;
+    _objects = objects;
+
+    _tox.delegate = self;
+    [_tox start];
+    files.queue = self.tox.queue;
 
     _toxSaveFileLock = [NSObject new];
 
@@ -243,6 +261,13 @@
                                          userInfo:@{ @"NSError" : error }];
         }
     }
+}
+
+#pragma mark - OCTToxDelegate
+
+- (void)toxDidIterate:(OCTTox *)tox
+{
+    [self.files sendProgressNotificationsNow];
 }
 
 #pragma mark -  Deprecated

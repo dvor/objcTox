@@ -28,8 +28,6 @@
 @property             OCTToxFileSize     *transferRateCounters;
 @property             long rollingIndex;
 
-@property             BOOL progressUpdatesDisabled;
-
 @property (strong)    OCTFileNotificationBlock notificationBlock;
 
 /* Helpful if a bit unclean. */
