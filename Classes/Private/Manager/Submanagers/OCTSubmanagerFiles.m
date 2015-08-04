@@ -195,7 +195,8 @@ void _OCTExceptFileNotInbound(void)
 - (void)removeFile:(OCTActiveFile *)file
 {
     [self.pendingNotifications removeObject:file];
-    [self.activeFiles removeObjectForKey:_OCTPairFriendAndFileNumber(file.friendNumber, file.fileMessage.fileNumber)];
+    NSString *k = _OCTPairFriendAndFileNumber(file.friendNumber, file.fileMessage.fileNumber);
+    [self.activeFiles removeObjectForKey:k];
 }
 
 #pragma mark - OCTToxDelegate.

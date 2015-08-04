@@ -213,7 +213,7 @@ time_t _OCTGetSystemUptime(void)
         theObject.filePosition = 0;
         theObject.restorationTag = nil;
         theObject.fileTag = nil;
-        theObject.fileNumber = 0;
+        // theObject.fileNumber = 0;
         theObject.filePath = nil;
     }];
     [[self.fileManager.dataSource managerGetRealmManager] noteMessageFileChanged:file];
@@ -227,7 +227,7 @@ time_t _OCTGetSystemUptime(void)
         theObject.fileState = OCTMessageFileStateReady;
         theObject.restorationTag = nil;
         theObject.fileTag = nil;
-        theObject.fileNumber = 0;
+        // theObject.fileNumber = 0;
         theObject.filePosition = 0;
         theObject.filePath = fd;
     }];
@@ -413,6 +413,7 @@ time_t _OCTGetSystemUptime(void)
     switch (ctl) {
         case OCTToxFileControlCancel: {
             DDLogDebug(@"_control: obeying cancel message from remote.");
+
             dispatch_async(self.fileManager.queue, ^{
                 [self _closeConduitIfNeeded];
 
