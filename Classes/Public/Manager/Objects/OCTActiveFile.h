@@ -42,9 +42,9 @@ typedef void (^OCTFileNotificationBlock)(OCTActiveFile *__nonnull);
  */
 @property (readonly) OCTToxFileSize bytesPerSecond;
 
-- (BOOL)pauseWithError:(NSError *_Nullable *_Nullable)error;
-- (BOOL)resumeWithError:(NSError *_Nullable *_Nullable)error;
-- (BOOL)cancelWithError:(NSError *_Nullable *_Nullable)error;
+- (BOOL)pauseWithError:(NSError *__nullable *__nullable)error;
+- (BOOL)resumeWithError:(NSError *__nullable *__nullable)error;
+- (BOOL)cancelWithError:(NSError *__nullable *__nullable)error;
 
 - (void)beginReceivingLiveUpdatesWithBlock:(nullable OCTFileNotificationBlock)blk;
 

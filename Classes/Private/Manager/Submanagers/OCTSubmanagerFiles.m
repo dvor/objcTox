@@ -108,7 +108,7 @@ void _OCTExceptFileNotInbound(void)
 
 - (nullable OCTActiveFile *)saveFileFromMessage:(nonnull OCTMessageAbstract *)msg
                                   usingReceiver:(nonnull id<OCTFileReceiving>)saver
-                                          error:(NSError *_Nullable *_Nullable)error
+                                          error:(NSError *__nullable *__nullable)error
 {
     NSParameterAssert(msg);
     NSParameterAssert(saver);
