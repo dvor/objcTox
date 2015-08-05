@@ -320,7 +320,7 @@ time_t _OCTGetSystemUptime(void)
         return NO;
     }
     else {
-        if (self.fileMessage.pauseFlags == OCTPauseFlagsSelf) {
+        if ((self.fileMessage.pauseFlags == OCTPauseFlagsSelf) || (self.fileMessage.pauseFlags == OCTPauseFlagsNobody)) {
             [self _resumeFile:self.fileMessage];
             DDLogInfo(@"OCTActiveFile: no further blocks on file so transitioning to Loading state.");
         }
