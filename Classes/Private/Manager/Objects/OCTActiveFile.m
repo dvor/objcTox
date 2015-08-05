@@ -320,8 +320,14 @@ time_t _OCTGetSystemUptime(void)
         return NO;
     }
     else {
-        [self _resumeFile:self.fileMessage];
-        DDLogInfo(@"OCTActiveFile: changing state to .Loading soon");
+        if (self.fileMessage.pauseFlags == OCTPauseFlagsSelf) {
+            [self _resumeFile:self.fileMessage];
+            DDLogInfo(@"OCTActiveFile: no further blocks on file so transitioning to Loading state.");
+        }
+        else {
+            [self _markFileAsPaused:self.fileMessage withFlags:OCTPauseFlagsOther];
+            DDLogInfo(@"OCTActiveFile: we're no longer pausing this file, but our friend still is.");
+        }
     }
 
     return YES;
