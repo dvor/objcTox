@@ -821,16 +821,16 @@ void (*_tox_self_get_public_key)(const Tox *tox, uint8_t *public_key);
     return result;
 }
 
-- (BOOL)fileSendChunkForFileNumber:(OCTToxFileNumber)fileNumber
-                      friendNumber:(OCTToxFriendNumber)friendNumber
-                          position:(OCTToxFileSize)position
-                              data:(NSData *)data
-                             error:(NSError **)error
+- (BOOL)fileSendChunk:(const uint8_t *)data
+        forFileNumber:(OCTToxFileNumber)fileNumber
+         friendNumber:(OCTToxFriendNumber)friendNumber
+             position:(OCTToxFileSize)position
+               length:(size_t)length
+                error:(NSError **)error
 {
     TOX_ERR_FILE_SEND_CHUNK cError;
-    const uint8_t *cData = [data bytes];
 
-    bool result = tox_file_send_chunk(self.tox, friendNumber, fileNumber, position, cData, (uint32_t)data.length, &cError);
+    bool result = tox_file_send_chunk(self.tox, friendNumber, fileNumber, position, data, length, &cError);
 
     [self fillError:error withCErrorFileSendChunk:cError];
 
