@@ -12,7 +12,7 @@
 
 @interface OCTFileInput ()
 
-@property (copy)   NSString *_filePath;
+@property (copy)   NSString *path;
 @property (strong) NSFileHandle *_readHandle;
 @property OCTToxFileSize _knownFileSize;
 
@@ -25,7 +25,7 @@
     self = [super init];
 
     if (self) {
-        self._filePath = path;
+        self.path = path;
     }
 
     return self;
@@ -38,7 +38,7 @@
     self = [super init];
 
     if (self) {
-        self._filePath = [aDecoder decodeObjectForKey:@"_filePath"];
+        self.path = [aDecoder decodeObjectForKey:@"_filePath"];
     }
 
     return self;
@@ -46,14 +46,14 @@
 
 - (void)encodeWithCoder:(nonnull NSCoder *)aCoder
 {
-    [aCoder encodeObject:self._filePath forKey:@"_filePath"];
+    [aCoder encodeObject:self.path forKey:@"_filePath"];
 }
 
 #pragma mark - OCTFileSending
 
 - (BOOL)transferWillBecomeActive:(nonnull OCTActiveFile *)file
 {
-    DDLogDebug(@"Opening %@", self._filePath);
+    DDLogDebug(@"Opening %@", self.path);
     return [self openFileIfNeeded];
 }
 
@@ -108,7 +108,7 @@
         return YES;
     }
 
-    self._readHandle = [NSFileHandle fileHandleForReadingAtPath:self._filePath];
+    self._readHandle = [NSFileHandle fileHandleForReadingAtPath:self.path];
 
     if (! self._readHandle) {
         return NO;
@@ -122,7 +122,7 @@
     }
 
     if ((info.st_mode & S_IFMT) != S_IFREG) {
-        DDLogError(@"OCTFileInput: %@ is not a regular file", self._filePath);
+        DDLogError(@"OCTFileInput: %@ is not a regular file", self.path);
         [self._readHandle closeFile];
         return NO;
     }
