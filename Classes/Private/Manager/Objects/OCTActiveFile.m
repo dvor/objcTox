@@ -459,6 +459,17 @@ time_t _OCTGetSystemUptime(void)
     return self.sender;
 }
 
+- (void)_completeFileTransferAndClose
+{
+    [self.sender transferWillBecomeInactive:self];
+    [self.sender transferWillComplete:self];
+
+    dispatch_async(dispatch_get_main_queue(), ^{
+        [self _markFileAsCompleted:self.fileMessage withFinalDestination:[self.sender path]];
+        [self.fileManager removeFile:self];
+    });
+}
+
 - (void)_sendChunkForSize:(size_t)csize fromPosition:(OCTToxFileSize)p
 {
     if (p != self.bytesMoved + 1) {
@@ -469,6 +480,7 @@ time_t _OCTGetSystemUptime(void)
             DDLogWarn(@"OCTActiveInBoundFile WARNING: receiver %@ does not support seeking, but we received out of order file chunk for position %llu."
                       "(I think the file position is %llu.) The file will be corrupted.", self.sender, p, self.bytesMoved + 1);
         }
+        self.bytesMoved = p;
     }
 
     /* The csize should be small enough that the risk of blowing the stack is

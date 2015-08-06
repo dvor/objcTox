@@ -217,6 +217,7 @@ void _OCTExceptFileNotInbound(void)
     ret.fileManager = self;
     ret.fileMessage = msg;
     ret.friendNumber = f.friendNumber;
+    ret.fileSize = prov.fileSize;
     ret.sender = prov;
     return ret;
 }
