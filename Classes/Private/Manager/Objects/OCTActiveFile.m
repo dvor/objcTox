@@ -16,6 +16,12 @@
 #import "OCTRealmManager.h"
 #include <sys/sysctl.h>
 
+/* these are annoying, and because we get all file numbers from toxcore,
+ * casting will never truncate them because they were never longs to begin
+ * with. */
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wshorten-64-to-32"
+
 time_t _OCTGetSystemUptime(void)
 {
     struct timeval boottime;
@@ -111,8 +117,38 @@ time_t _OCTGetSystemUptime(void)
 
 - (void)_control:(OCTToxFileControl)ctl
 {
-    @throw [NSException exceptionWithName:@"OCTFileException" reason:@"Only subclasses of OCTActiveFile can be used." userInfo:nil];
-    return;
+    switch (ctl) {
+        case OCTToxFileControlCancel: {
+            DDLogDebug(@"_control: obeying cancel message from remote.");
+
+            dispatch_async(self.fileManager.queue, ^{
+                [self _closeConduitIfNeeded];
+
+                dispatch_async(dispatch_get_main_queue(), ^{
+                    [self.fileManager removeFile:self];
+                });
+            });
+            [self _markFileAsCancelled:self.fileMessage];
+            break;
+        }
+        case OCTToxFileControlPause:
+            DDLogDebug(@"_control: obeying pause message from remote.");
+            [self _markFileAsPaused:self.fileMessage withFlags:self.fileMessage.pauseFlags | OCTPauseFlagsOther];
+            break;
+        case OCTToxFileControlResume: {
+            DDLogDebug(@"_control: obeying resume message from remote.");
+            if (self.fileMessage.pauseFlags == OCTPauseFlagsOther) {
+                dispatch_sync(self.fileManager.queue, ^{
+                    [self _openConduitIfNeeded];
+                });
+                [self _resumeFile:self.fileMessage];
+            }
+            else {
+                [self _markFileAsPaused:self.fileMessage withFlags:OCTPauseFlagsSelf];
+            }
+            break;
+        }
+    }
 }
 
 - (BOOL)_openConduitIfNeeded
@@ -414,42 +450,6 @@ time_t _OCTGetSystemUptime(void)
     [self.fileManager scheduleProgressNotificationForFile:self];
 }
 
-- (void)_control:(OCTToxFileControl)ctl
-{
-    switch (ctl) {
-        case OCTToxFileControlCancel: {
-            DDLogDebug(@"_control: obeying cancel message from remote.");
-
-            dispatch_async(self.fileManager.queue, ^{
-                [self _closeConduitIfNeeded];
-
-                dispatch_async(dispatch_get_main_queue(), ^{
-                    [self.fileManager removeFile:self];
-                });
-            });
-            [self _markFileAsCancelled:self.fileMessage];
-            break;
-        }
-        case OCTToxFileControlPause:
-            DDLogDebug(@"_control: obeying pause message from remote.");
-            [self _markFileAsPaused:self.fileMessage withFlags:self.fileMessage.pauseFlags | OCTPauseFlagsOther];
-            break;
-        case OCTToxFileControlResume: {
-            DDLogDebug(@"_control: obeying resume message from remote.");
-            if (self.fileMessage.pauseFlags == OCTPauseFlagsOther) {
-                dispatch_sync(self.fileManager.queue, ^{
-                    [self _openConduitIfNeeded];
-                });
-                [self _resumeFile:self.fileMessage];
-            }
-            else {
-                [self _markFileAsPaused:self.fileMessage withFlags:OCTPauseFlagsSelf];
-            }
-            break;
-        }
-    }
-}
-
 @end
 
 @implementation OCTActiveOutboundFile
@@ -459,4 +459,29 @@ time_t _OCTGetSystemUptime(void)
     return self.sender;
 }
 
+- (void)_sendChunkForSize:(size_t)csize fromPosition:(OCTToxFileSize)p
+{
+    if (p != self.bytesMoved + 1) {
+        if ([self.sender respondsToSelector:@selector(moveToPosition:)]) {
+            [self.sender moveToPosition:p];
+        }
+        else {
+            DDLogWarn(@"OCTActiveInBoundFile WARNING: receiver %@ does not support seeking, but we received out of order file chunk for position %llu."
+                      "(I think the file position is %llu.) The file will be corrupted.", self.sender, p, self.bytesMoved + 1);
+        }
+    }
+
+    /* The csize should be small enough that the risk of blowing the stack is
+     * minimal however this is a toxcore implementation detail. */
+    uint8_t buf[csize];
+
+    size_t actual = [self.sender readBytes:csize intoBuffer:buf];
+    DDLogDebug(@"_sendChunkForSize: %zu", actual);
+    [[self.fileManager.dataSource managerGetTox] fileSendChunk:buf forFileNumber:self.fileMessage.fileNumber friendNumber:self.friendNumber position:p length:actual error:nil];
+    [self _countBytes:actual];
+    [self.fileManager scheduleProgressNotificationForFile:self];
+}
+
 @end
+
+#pragma clang diagnostic pop

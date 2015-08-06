@@ -102,6 +102,8 @@
 
 @interface OCTFileInput : NSObject <OCTFileSending, NSCoding>
 
+- (instancetype)initWithPath:(nonnull NSString *)path;
+
 @end
 
 @interface OCTFileOutput : NSObject <OCTFileReceiving, NSCoding>
