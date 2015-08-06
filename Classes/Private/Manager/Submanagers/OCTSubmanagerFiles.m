@@ -106,6 +106,57 @@ void _OCTExceptFileNotInbound(void)
 
 #pragma mark - Public API
 
+- (nullable OCTActiveFile *)sendFile:(nonnull NSString *)name
+                         usingSender:(nonnull id<OCTFileSending>)file
+                              toChat:(nonnull OCTChat *)chat
+                                type:(OCTFileUsage)type
+                             message:(OCTMessageAbstract *__nonnull *__nullable)msgout
+                               error:(NSError *__nullable *__nullable)error
+{
+    NSParameterAssert(name);
+    NSParameterAssert(file);
+    NSParameterAssert(chat);
+
+    NSError *err = nil;
+
+    OCTFriend *f = chat.friends.firstObject;
+    OCTToxFileNumber n = [[self.dataSource managerGetTox] fileSendWithFriendNumber:f.friendNumber kind:OCTToxFileKindData fileSize:file.fileSize fileId:nil fileName:name error:&err];
+
+    OCTMessageFile *newFileMessage = [[OCTMessageFile alloc] init];
+    newFileMessage.fileNumber = n;
+    newFileMessage.fileSize = file.fileSize;
+    newFileMessage.fileName = name;
+    newFileMessage.fileUsage = type;
+    newFileMessage.fileState = OCTMessageFileStatePaused;
+    newFileMessage.pauseFlags = OCTPauseFlagsOther;
+    newFileMessage.filePath = @"";
+    newFileMessage.fileUTI = @"";
+    newFileMessage.filePosition = 0;
+    newFileMessage.restorationTag = [NSData data];
+    newFileMessage.fileTag = [[self.dataSource managerGetTox] fileGetFileIdForFileNumber:n friendNumber:f.friendNumber error:nil];
+
+    OCTMessageAbstract *newAbstractMessage = [[OCTMessageAbstract alloc] init];
+    newAbstractMessage.dateInterval = [NSDate timeIntervalSinceReferenceDate] + NSTimeIntervalSince1970;
+    newAbstractMessage.sender = f;
+    newAbstractMessage.chat = chat;
+    newAbstractMessage.messageFile = newFileMessage;
+
+    OCTActiveOutboundFile *send = [self _createSendingFileForFriend:f message:newFileMessage provider:file];
+    self.activeFiles[_OCTPairFriendAndFileNumber(f.friendNumber, n)] = send;
+
+    [[self.dataSource managerGetRealmManager] addObject:newAbstractMessage];
+    [[self.dataSource managerGetRealmManager] updateObject:chat withBlock:^(OCTChat *theChat) {
+        theChat.lastMessage = newAbstractMessage;
+        theChat.lastActivityDateInterval = newAbstractMessage.dateInterval;
+    }];
+
+    if (msgout) {
+        *msgout = newAbstractMessage;
+    }
+
+    // [send resumeWithError:error];
+    return send;
+}
 
 - (nullable OCTActiveFile *)saveFileFromMessage:(nonnull OCTMessageAbstract *)msg
                                   usingReceiver:(nonnull id<OCTFileReceiving>)saver
@@ -161,7 +212,7 @@ void _OCTExceptFileNotInbound(void)
     return self.activeFiles[_OCTPairFriendAndFileNumber(fn, file)];
 }
 
-- (nonnull OCTActiveFile *)_createSendingFileForFriend:(OCTFriend *)f message:(OCTMessageFile *)msg provider:(id<OCTFileSending>)prov
+- (nonnull OCTActiveOutboundFile *)_createSendingFileForFriend:(OCTFriend *)f message:(OCTMessageFile *)msg provider:(id<OCTFileSending>)prov
 {
     OCTActiveOutboundFile *ret = [[OCTActiveOutboundFile alloc] init];
     ret.fileManager = self;
@@ -171,7 +222,7 @@ void _OCTExceptFileNotInbound(void)
     return ret;
 }
 
-- (nonnull OCTActiveFile *)_createReceivingFileForMessage:(OCTMessageAbstract *)f
+- (nonnull OCTActiveInboundFile *)_createReceivingFileForMessage:(OCTMessageAbstract *)f
 {
     OCTActiveInboundFile *ret = [[OCTActiveInboundFile alloc] init];
     ret.fileManager = self;
@@ -201,7 +252,23 @@ void _OCTExceptFileNotInbound(void)
 
 #pragma mark - OCTToxDelegate.
 
-- (void)tox:(OCTTox *)tox fileChunkRequestForFileNumber:(OCTToxFileNumber)fileNumber friendNumber:(OCTToxFriendNumber)friendNumber position:(OCTToxFileSize)position length:(size_t)length {}
+- (void)     tox:(OCTTox *)tox fileChunkRequestForFileNumber:(OCTToxFileNumber)fileNumber
+    friendNumber:(OCTToxFriendNumber)friendNumber
+        position:(OCTToxFileSize)position
+          length:(size_t)length
+{
+    OCTActiveOutboundFile *outboundFile = (OCTActiveOutboundFile *)[self activeFileForFriendNumber:friendNumber fileNumber:fileNumber];
+
+    NSAssert([outboundFile isMemberOfClass:[OCTActiveOutboundFile class]],
+             @"Chunk requested for a bad file %@!", outboundFile);
+
+    if (length == 0) {
+        [outboundFile _completeFileTransferAndClose];
+    }
+    else {
+        [outboundFile _sendChunkForSize:length fromPosition:position];
+    }
+}
 
 - (void)     tox:(OCTTox *)tox fileReceiveChunk:(const uint8_t *)chunk
           length:(size_t)length

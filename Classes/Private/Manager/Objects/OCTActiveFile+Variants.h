@@ -42,6 +42,9 @@
 
 @property (strong) id<OCTFileSending> sender;
 
+- (void)_completeFileTransferAndClose;
+- (void)_sendChunkForSize:(size_t)csize fromPosition:(OCTToxFileSize)p;
+
 @end
 
 @interface OCTActiveInboundFile : OCTActiveFile
