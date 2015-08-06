@@ -59,10 +59,15 @@
 
 @required
 /**
+ * Return the full path of the source file on disk if applicable.
+ */
+- (nullable NSString *)path;
+
+@required
+/**
  * Return the size in bytes of the file that is being offered.
- * This method will be called any time AFTER transferWillBecomeActive:,
- * and any time BEFORE transferWillBecomeInactive:, so you can
- * prepare.
+ * This method may be called at any time (including before a call to
+ * -transferWillBecomeActive:).
  */
 - (OCTToxFileSize)fileSize;
 
@@ -102,7 +107,7 @@
 
 @interface OCTFileInput : NSObject <OCTFileSending, NSCoding>
 
-- (instancetype)initWithPath:(nonnull NSString *)path;
+- (nonnull instancetype)initWithPath:(nonnull NSString *)path;
 
 @end
 
