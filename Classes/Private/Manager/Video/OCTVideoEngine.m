@@ -26,8 +26,10 @@ static const OSType kPixelFormat = kCVPixelFormatType_420YpCbCr8BiPlanarVideoRan
 @property (nonatomic, weak) OCTVideoView *videoView;
 @property (nonatomic, assign) uint8_t *reusableUChromaPlane;
 @property (nonatomic, assign) uint8_t *reusableVChromaPlane;
+@property (nonatomic, assign) uint8_t *reusableYChromaPlane;
 @property (strong, nonatomic) OCTPixelBufferPool *pixelPool;
 @property (nonatomic, assign) NSUInteger sizeOfChromaPlanes;
+@property (nonatomic, assign) NSUInteger sizeOfYPlane;
 
 @end
 
@@ -222,14 +224,18 @@ static const OSType kPixelFormat = kCVPixelFormatType_420YpCbCr8BiPlanarVideoRan
         return;
     }
 
-    CVPixelBufferLockBaseAddress(imageBuffer, 0);
+    CVPixelBufferLockBaseAddress(imageBuffer, kCVPixelBufferLock_ReadOnly);
 
-    OCTToxAVVideoWidth width = (OCTToxAVVideoWidth)CVPixelBufferGetWidth(imageBuffer);
-    OCTToxAVVideoHeight height = (OCTToxAVVideoHeight)CVPixelBufferGetHeight(imageBuffer);
-    NSUInteger numberOfElementsForChroma = height * width / 2;
+    size_t yHeight = CVPixelBufferGetHeightOfPlane(imageBuffer, 0);
+    size_t yBytesPerRow = CVPixelBufferGetBytesPerRowOfPlane(imageBuffer, 0);
+    size_t yStride = MAX(CVPixelBufferGetWidthOfPlane(imageBuffer, 0), yBytesPerRow);
 
-    uint8_t *yPlane = CVPixelBufferGetBaseAddressOfPlane(imageBuffer, 0);
-    uint8_t *uvPlane = CVPixelBufferGetBaseAddressOfPlane(imageBuffer, 1);
+    size_t uvHeight = CVPixelBufferGetHeightOfPlane(imageBuffer, 1);
+    size_t uvBytesPerRow = CVPixelBufferGetBytesPerRowOfPlane(imageBuffer, 1);
+    size_t uvStride = MAX(CVPixelBufferGetWidthOfPlane(imageBuffer, 1), uvBytesPerRow);
+
+    size_t ySize = yBytesPerRow * yHeight;
+    size_t numberOfElementsForChroma = uvBytesPerRow * uvHeight / 2;
 
     /**
      * Recreate the buffers if the original ones are too small
@@ -244,32 +250,65 @@ static const OSType kPixelFormat = kCVPixelFormatType_420YpCbCr8BiPlanarVideoRan
             free(self.reusableVChromaPlane);
         }
 
-        self.reusableUChromaPlane = malloc(numberOfElementsForChroma * sizeof(uint8_t));
-        self.reusableVChromaPlane = malloc(numberOfElementsForChroma * sizeof(uint8_t));
+        self.reusableUChromaPlane = malloc(numberOfElementsForChroma * sizeof(OCTToxAVPlaneData));
+        self.reusableVChromaPlane = malloc(numberOfElementsForChroma * sizeof(OCTToxAVPlaneData));
 
         self.sizeOfChromaPlanes = numberOfElementsForChroma;
     }
 
-    /**
-     * Deinterleaved the UV planes and place them to in the reusable arrays
-     */
-    for (int i = 0; i < (height * width / 2); i += 2) {
-        self.reusableUChromaPlane[i / 2] = uvPlane[i];
-        self.reusableVChromaPlane[i / 2] = uvPlane[i+1];
+    if (ySize > self.sizeOfYPlane) {
+        if (self.reusableYChromaPlane) {
+            free(self.reusableYChromaPlane);
+        }
+        self.reusableYChromaPlane = malloc(ySize * sizeof(OCTToxAVPlaneData));
+        self.sizeOfYPlane = ySize;
     }
 
-    NSError *error;
-    if (! [self.toxav sendVideoFrametoFriend:self.friendNumber
-                                       width:width
-                                      height:height
-                                      yPlane:yPlane
-                                      uPlane:self.reusableUChromaPlane
-                                      vPlane:self.reusableVChromaPlane
-                                       error:&error]) {
-        DDLogWarn(@"%@ error:%@ width:%d height:%d", self, error, width, height);
+    /**
+     * Copy the Y plane data while skipping stride
+     */
+    OCTToxAVPlaneData *yPlane = CVPixelBufferGetBaseAddressOfPlane(imageBuffer, 0);
+    uint8_t *yDestination = self.reusableYChromaPlane;
+    for (size_t i = 0; i < yHeight; i++) {
+        memcpy(yDestination, yPlane, yBytesPerRow);
+        yPlane += yStride;
+        yDestination += yBytesPerRow;
+    }
+
+    /**
+     * Deinterleaved the UV [uvuvuvuv] planes and place them to in the reusable arrays
+     */
+    OCTToxAVPlaneData *uvPlane = CVPixelBufferGetBaseAddressOfPlane(imageBuffer, 1);
+    uint8_t *uDestination = self.reusableUChromaPlane;
+    uint8_t *vDestination = self.reusableVChromaPlane;
+
+    for (size_t height = 0; height < uvHeight; height++) {
+
+        for (size_t i = 0; i < uvBytesPerRow; i += 2) {
+            uDestination[i / 2] = uvPlane[i];
+            vDestination[i / 2] = uvPlane[i + 1];
+        }
+
+        uvPlane += uvStride;
+        uDestination += uvBytesPerRow / 2;
+        vDestination += uvBytesPerRow / 2;
+
     }
 
     CVPixelBufferUnlockBaseAddress(imageBuffer, 0);
+    uDestination = nil;
+    vDestination = nil;
+
+    NSError *error;
+    if (! [self.toxav sendVideoFrametoFriend:self.friendNumber
+                                       width:(OCTToxAVVideoWidth)yBytesPerRow
+                                      height:(OCTToxAVVideoHeight)yHeight
+                                      yPlane:self.reusableYChromaPlane
+                                      uPlane:self.reusableUChromaPlane
+                                      vPlane:self.reusableVChromaPlane
+                                       error:&error]) {
+        DDLogWarn(@"%@ error:%@ width:%zu height:%zu", self, error, yBytesPerRow, yHeight);
+    }
 }
 
 #pragma mark - Private
