@@ -141,10 +141,27 @@
                              message:(OCTMessageAbstract *__nonnull *__nullable)msgout
                                error:(NSError *__nullable *__nullable)error;
 
+/**
+ * Begin downloading the file from `msg`.
+ * This will also unpause the underlying file transfer.
+ * It will fail if the file message's state is not WaitingConfirmation.
+ * @param msg An OCTAbstractMessage with a non-null messageFile.
+ * @param saver An <OCTFileReceiving> that file data will be sent to.
+ *              To get one that saves file data to the configured download folder,
+ *              use -newDefaultReceiver.
+ * @param error An error out pointer. Check this if I return nil.
+ */
 - (nullable OCTActiveFile *)saveFileFromMessage:(nonnull OCTMessageAbstract *)msg
                                   usingReceiver:(nonnull id<OCTFileReceiving>)saver
                                           error:(NSError *__nullable *__nullable)error;
 
+/**
+ * Get the OCTActiveFile for a file transfer. It can be used to pause/resume/cancel
+ * the transfer.
+ * This method will return nil if the file's state is not Paused or Loading.
+ * To get a file that's WaitingConfirmation, use -saveFileFromMessage:... .
+ * @param file An OCTAbstractMessage with a non-null messageFile.
+ */
 - (nullable OCTActiveFile *)activeFileForMessage:(nonnull OCTMessageAbstract *)file;
 
 @end

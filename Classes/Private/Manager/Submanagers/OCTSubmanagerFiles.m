@@ -122,6 +122,16 @@ void _OCTExceptFileNotInbound(void)
     OCTFriend *f = chat.friends.firstObject;
     OCTToxFileNumber n = [[self.dataSource managerGetTox] fileSendWithFriendNumber:f.friendNumber kind:OCTToxFileKindData fileSize:file.fileSize fileId:nil fileName:name error:&err];
 
+    if (err) {
+        if (error) {
+            *error = err;
+        }
+
+        DDLogError(@"%@", err);
+
+        return nil;
+    }
+
     OCTMessageFile *newFileMessage = [[OCTMessageFile alloc] init];
     newFileMessage.fileNumber = n;
     newFileMessage.fileSize = file.fileSize;
@@ -137,7 +147,7 @@ void _OCTExceptFileNotInbound(void)
 
     OCTMessageAbstract *newAbstractMessage = [[OCTMessageAbstract alloc] init];
     newAbstractMessage.dateInterval = [NSDate timeIntervalSinceReferenceDate] + NSTimeIntervalSince1970;
-    newAbstractMessage.sender = f;
+    newAbstractMessage.sender = nil;
     newAbstractMessage.chat = chat;
     newAbstractMessage.messageFile = newFileMessage;
 
@@ -247,7 +257,13 @@ void _OCTExceptFileNotInbound(void)
 - (void)removeFile:(OCTActiveFile *)file
 {
     [self.pendingNotifications removeObject:file];
+
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wshorten-64-to-32"
+
     NSString *k = _OCTPairFriendAndFileNumber(file.friendNumber, file.fileMessage.fileNumber);
+
+#pragma clang diagnostic pop
     [self.activeFiles removeObjectForKey:k];
 }
 
