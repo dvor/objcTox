@@ -71,6 +71,8 @@
     }
 
     _tox = [[OCTTox alloc] initWithOptions:configuration.options savedData:savedData error:nil];
+    _tox.delegate = self;
+    [_tox start];
 
     if (! savedData) {
         [self saveTox];
@@ -93,6 +95,7 @@
 
     OCTSubmanagerFiles *files = [OCTSubmanagerFiles new];
     files.dataSource = self;
+    files.queue = self.tox.queue;
     _files = files;
 
     OCTSubmanagerAvatars *avatars = [OCTSubmanagerAvatars new];
@@ -102,10 +105,6 @@
     OCTSubmanagerObjects *objects = [OCTSubmanagerObjects new];
     objects.dataSource = self;
     _objects = objects;
-
-    _tox.delegate = self;
-    [_tox start];
-    files.queue = self.tox.queue;
 
     _toxSaveFileLock = [NSObject new];
 
@@ -193,13 +192,12 @@
 
 - (BOOL)respondsToSelector:(SEL)aSelector
 {
-    id submanager = [self forwardingTargetForSelector:aSelector];
-
-    if (submanager) {
+    if ([super respondsToSelector:aSelector] || [self forwardingTargetForSelector:aSelector]) {
         return YES;
     }
-
-    return [super respondsToSelector:aSelector];
+    else {
+        return NO;
+    }
 }
 
 - (id)forwardingTargetForSelector:(SEL)aSelector
