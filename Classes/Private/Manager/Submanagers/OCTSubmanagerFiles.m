@@ -280,6 +280,7 @@ void _OCTExceptFileNotInbound(void)
              @"Chunk requested for a bad file %@!", outboundFile);
 
     if (length == 0) {
+        [[self.dataSource managerGetTox] fileSendChunk:NULL forFileNumber:fileNumber friendNumber:friendNumber position:position length:0 error:nil];
         [outboundFile _completeFileTransferAndClose];
     }
     else {
