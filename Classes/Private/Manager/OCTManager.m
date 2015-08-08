@@ -251,4 +251,12 @@
     [self.files sendProgressNotificationsNow];
 }
 
+- (void)tox:(OCTTox *)tox friendConnectionStatusChanged:(OCTToxConnectionStatus)status friendNumber:(OCTToxFriendNumber)friendNumber
+{
+    // the rightful owner of this callback
+    [self.friends tox:tox friendConnectionStatusChanged:status friendNumber:friendNumber];
+    // needed for file resuming machinery
+    [self.files tox:tox friendConnectionStatusChanged:status friendNumber:friendNumber];
+}
+
 @end

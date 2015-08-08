@@ -268,6 +268,9 @@ void _OCTExceptFileNotInbound(void)
 
 #pragma mark - OCTToxDelegate.
 
+- (void)     tox:(OCTTox *)tox friendConnectionStatusChanged:(OCTToxConnectionStatus)status
+    friendNumber:(OCTToxFriendNumber)friendNumber {}
+
 - (void)     tox:(OCTTox *)tox fileChunkRequestForFileNumber:(OCTToxFileNumber)fileNumber
     friendNumber:(OCTToxFriendNumber)friendNumber
         position:(OCTToxFileSize)position
