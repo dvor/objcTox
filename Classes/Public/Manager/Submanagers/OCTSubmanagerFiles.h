@@ -20,6 +20,7 @@
  * This controls whether objcTox will try to resume files transfers for you.
  * If this is NO, transfers can still be resumed on a case-by-case basis, by
  * doing...
+ * The default value is YES.
  */
 @property BOOL resumesFiles;
 
