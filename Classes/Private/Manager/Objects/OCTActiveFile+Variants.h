@@ -35,6 +35,7 @@
 
 - (void)_sendProgressUpdateNow;
 - (void)_control:(OCTToxFileControl)ctl;
+- (void)_interrupt;
 
 @end
 

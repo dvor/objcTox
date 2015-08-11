@@ -45,6 +45,13 @@ typedef NS_ENUM(NSInteger, OCTMessageFileState) {
      * Not resumable.
      */
     OCTMessageFileStateReady,
+
+    /**
+     * File was interrupted, possibly by the friend going offline,
+     * we crashed, etc.
+     * Pass OCTMessageAbstract to [placeholder] to resume.
+     */
+    OCTMessageFileStateInterrupted
 };
 
 /* Roughly corresponds to TOX_FILE_KIND in toxcore */
