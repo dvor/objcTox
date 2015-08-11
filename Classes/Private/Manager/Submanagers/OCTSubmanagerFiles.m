@@ -277,7 +277,19 @@ void _OCTExceptFileNotInbound(void)
 #pragma mark - OCTToxDelegate.
 
 - (void)     tox:(OCTTox *)tox friendConnectionStatusChanged:(OCTToxConnectionStatus)status
-    friendNumber:(OCTToxFriendNumber)friendNumber {}
+    friendNumber:(OCTToxFriendNumber)friendNumber
+{
+    if (status == OCTToxConnectionStatusNone) {
+        NSArray *files = self.activeFiles[@(friendNumber)].allValues;
+        if (! files) {
+            return;
+        }
+
+        for (OCTActiveFile *f in files) {
+            [f _interrupt];
+        }
+    }
+}
 
 - (void)     tox:(OCTTox *)tox fileChunkRequestForFileNumber:(OCTToxFileNumber)fileNumber
     friendNumber:(OCTToxFriendNumber)friendNumber

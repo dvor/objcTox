@@ -151,6 +151,19 @@ time_t _OCTGetSystemUptime(void)
     }
 }
 
+- (void)_interrupt
+{
+    dispatch_async(self.fileManager.queue, ^{
+        [self _closeConduitIfNeeded];
+
+        dispatch_async(dispatch_get_main_queue(), ^{
+            [self.fileManager removeFile:self];
+        });
+    });
+
+    [self _markFileAsInterrupted:self.fileMessage];
+}
+
 - (BOOL)_openConduitIfNeeded
 {
     if (! self.isConduitOpen) {
@@ -284,6 +297,24 @@ time_t _OCTGetSystemUptime(void)
     [[self.fileManager.dataSource managerGetRealmManager] updateObject:file withBlock:^(OCTMessageFile *theObject) {
         theObject.fileState = OCTMessageFileStatePaused;
         theObject.pauseFlags = flag;
+        theObject.filePosition = self.bytesMoved;
+        theObject.restorationTag = conduitData;
+    }];
+    [[self.fileManager.dataSource managerGetRealmManager] noteMessageFileChanged:file];
+}
+
+- (void)_markFileAsInterrupted:(OCTMessageFile *)file
+{
+    DDLogDebug(@"Marking file %@ as INTERRUPTED.", file);
+    DDLogDebug(@"archiving resume data; if we die we're starting at offset %lld", self.bytesMoved);
+
+    NSData *conduitData = nil;
+    if ([self._conduit conformsToProtocol:@protocol(NSCoding)]) {
+        conduitData = [NSKeyedArchiver archivedDataWithRootObject:self._conduit];
+    }
+
+    [[self.fileManager.dataSource managerGetRealmManager] updateObject:file withBlock:^(OCTMessageFile *theObject) {
+        theObject.fileState = OCTMessageFileStateInterrupted;
         theObject.filePosition = self.bytesMoved;
         theObject.restorationTag = conduitData;
     }];
