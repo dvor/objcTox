@@ -47,6 +47,10 @@
  */
 - (void)updateObjectsWithoutNotification:(void (^)())updateBlock;
 
+- (void)updateObjectsOfClass:(Class)cls withBlock:(void (^)(id theObject))updateBlock;
+- (void)updateObjectsOfClass:(Class)cls withoutNotificationUsingBlock:(void (^)(id theObject))updateBlock;
+
+
 #pragma mark -  Other methods
 
 - (OCTFriend *)friendWithFriendNumber:(OCTToxFriendNumber)friendNumber;
