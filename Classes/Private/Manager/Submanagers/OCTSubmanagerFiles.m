@@ -18,6 +18,9 @@
 #import "OCTFileIO+Private.h"
 #import "DDLog.h"
 
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wshorten-64-to-32"
+
 static NSString *_OCTSanitizeFilename(NSString *filename)
 {
     // TODO: maybe get rid of nulls too
@@ -41,11 +44,6 @@ static OCTFileUsage _OCTToxFileKindToFileUsage(OCTToxFileKind k)
             /*case 5413 OCTToxFileKindSticker:
              *  return OCTFileUsageUnimplementedAlso; */
     }
-}
-
-static NSString *_OCTPairFriendAndFileNumber(OCTToxFriendNumber friend, OCTToxFileNumber file)
-{
-    return [NSString stringWithFormat:@"OCTFilePair%d,%u", friend, file];
 }
 
 void _OCTExceptFileNotMessageFile(void)
@@ -79,7 +77,7 @@ void _OCTExceptFileNotInbound(void)
 @property (weak, nonatomic) id<OCTSubmanagerDataSource> dataSource;
 @property (weak) dispatch_queue_t queue;
 
-@property (strong) NSMutableDictionary<NSString *, OCTActiveFile *> *activeFiles;
+@property (strong) NSMutableDictionary<NSNumber *, NSMutableDictionary<NSNumber *, OCTActiveFile *> *> *activeFiles;
 
 @property (strong) NSMutableSet<OCTActiveFile *> *pendingNotifications;
 
@@ -152,7 +150,8 @@ void _OCTExceptFileNotInbound(void)
     newAbstractMessage.messageFile = newFileMessage;
 
     OCTActiveOutboundFile *send = [self _createSendingFileForFriend:f message:newFileMessage provider:file];
-    self.activeFiles[_OCTPairFriendAndFileNumber(f.friendNumber, n)] = send;
+    [self setActiveFile:send forFriendNumber:f.friendNumber fileNumber:n];
+    self.activeFiles[@(f.friendNumber)][@(n)] = send;
 
     [[self.dataSource managerGetRealmManager] addObject:newAbstractMessage];
     [[self.dataSource managerGetRealmManager] updateObject:chat withBlock:^(OCTChat *theChat) {
@@ -201,12 +200,12 @@ void _OCTExceptFileNotInbound(void)
     NSParameterAssert(file);
 
     if (file.sender) {
-        return self.activeFiles[_OCTPairFriendAndFileNumber(file.sender.friendNumber, (OCTToxFileNumber)file.messageFile.fileNumber)];
+        return [self activeFileForFriendNumber:file.sender.friendNumber fileNumber:file.messageFile.fileNumber];
     }
     else {
         // groupchats?
         OCTFriend *friend = [file.chat.friends firstObject];
-        return self.activeFiles[_OCTPairFriendAndFileNumber(friend.friendNumber, (OCTToxFileNumber)file.messageFile.fileNumber)];
+        return [self activeFileForFriendNumber:friend.friendNumber fileNumber:file.messageFile.fileNumber];
     }
 }
 
@@ -217,9 +216,25 @@ void _OCTExceptFileNotInbound(void)
 
 #pragma mark - Private
 
+- (void)setActiveFile:(nullable OCTActiveFile *)file forFriendNumber:(OCTToxFriendNumber)fn fileNumber:(OCTToxFileNumber)filen
+{
+    NSMutableDictionary *d = self.activeFiles[@(fn)];
+    if (! d) {
+        d = [[NSMutableDictionary alloc] init];
+        self.activeFiles[@(fn)] = d;
+    }
+
+    if (file) {
+        d[@(filen)] = file;
+    }
+    else {
+        [d removeObjectForKey:@(filen)];
+    }
+}
+
 - (nullable OCTActiveFile *)activeFileForFriendNumber:(OCTToxFriendNumber)fn fileNumber:(OCTToxFileNumber)file
 {
-    return self.activeFiles[_OCTPairFriendAndFileNumber(fn, file)];
+    return self.activeFiles[@(fn)][@(file)];
 }
 
 - (nonnull OCTActiveOutboundFile *)_createSendingFileForFriend:(OCTFriend *)f message:(OCTMessageFile *)msg provider:(id<OCTFileSending>)prov
@@ -257,14 +272,7 @@ void _OCTExceptFileNotInbound(void)
 - (void)removeFile:(OCTActiveFile *)file
 {
     [self.pendingNotifications removeObject:file];
-
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wshorten-64-to-32"
-
-    NSString *k = _OCTPairFriendAndFileNumber(file.friendNumber, file.fileMessage.fileNumber);
-
-#pragma clang diagnostic pop
-    [self.activeFiles removeObjectForKey:k];
+    [self setActiveFile:nil forFriendNumber:file.friendNumber fileNumber:file.fileMessage.fileNumber];
 }
 
 #pragma mark - OCTToxDelegate.
@@ -313,8 +321,7 @@ void _OCTExceptFileNotInbound(void)
     friendNumber:(OCTToxFriendNumber)friendNumber
       fileNumber:(OCTToxFileNumber)fileNumber
 {
-    NSString *key = _OCTPairFriendAndFileNumber(friendNumber, fileNumber);
-    OCTActiveFile *f = self.activeFiles[key];
+    OCTActiveFile *f = [self activeFileForFriendNumber:friendNumber fileNumber:fileNumber];
 
     NSAssert(f, @"Anomaly: received a control for which we don't have an OCTActiveFile on record for.");
 
@@ -354,7 +361,7 @@ void _OCTExceptFileNotInbound(void)
         newAbstractMessage.chat = c;
         newAbstractMessage.messageFile = newFileMessage;
 
-        self.activeFiles[_OCTPairFriendAndFileNumber(friendNumber, fileNumber)] = [self _createReceivingFileForMessage:newAbstractMessage];
+        [self setActiveFile:[self _createReceivingFileForMessage:newAbstractMessage] forFriendNumber:friendNumber fileNumber:fileNumber];
 
         [[self.dataSource managerGetRealmManager] addObject:newAbstractMessage];
         [[self.dataSource managerGetRealmManager] updateObject:c withBlock:^(OCTChat *theChat) {
@@ -365,3 +372,5 @@ void _OCTExceptFileNotInbound(void)
 }
 
 @end
+
+#pragma clang diagnostic pop
