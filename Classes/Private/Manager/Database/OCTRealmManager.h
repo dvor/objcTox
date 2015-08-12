@@ -47,7 +47,15 @@
  */
 - (void)updateObjectsWithoutNotification:(void (^)())updateBlock;
 
+/**
+ * Map `updateBlock` over all realm objects of the `cls`.
+ */
 - (void)updateObjectsOfClass:(Class)cls withBlock:(void (^)(id theObject))updateBlock;
+
+/**
+ * Map `updateBlock` over all realm objects of the `cls` without sending RBQ update notifications.
+ * The note on -updateObjectsWithoutNotification: applies here too.
+ */
 - (void)updateObjectsOfClass:(Class)cls withoutNotificationUsingBlock:(void (^)(id theObject))updateBlock;
 
 
