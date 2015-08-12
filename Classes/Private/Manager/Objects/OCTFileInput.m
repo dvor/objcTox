@@ -13,8 +13,8 @@
 @interface OCTFileInput ()
 
 @property (copy)   NSString *path;
-@property (strong) NSFileHandle *_readHandle;
-@property OCTToxFileSize _knownFileSize;
+@property (strong) NSFileHandle *readHandle;
+@property OCTToxFileSize knownFileSize;
 
 @end
 
@@ -60,20 +60,20 @@
 - (OCTToxFileSize)fileSize
 {
     [self openFileIfNeeded];
-    NSAssert(self._readHandle, @"File could not be opened.");
+    NSAssert(self.readHandle, @"File could not be opened.");
 
-    int fd = self._readHandle.fileDescriptor;
+    int fd = self.readHandle.fileDescriptor;
     off_t currentPos = lseek(fd, 0, SEEK_CUR);
-    self._knownFileSize = lseek(fd, 0, SEEK_END);
+    self.knownFileSize = lseek(fd, 0, SEEK_END);
     lseek(fd, currentPos, SEEK_SET);
 
-    return self._knownFileSize;
+    return self.knownFileSize;
 }
 
 - (BOOL)moveToPosition:(OCTToxFileSize)offset
 {
     @try {
-        [self._readHandle seekToFileOffset:offset];
+        [self.readHandle seekToFileOffset:offset];
     }
     @catch (NSException *e) {
         DDLogError(@"OCTFileInput: seek failed... %@", e);
@@ -84,14 +84,14 @@
 
 - (size_t)readBytes:(OCTToxFileSize)chunk_size intoBuffer:(nonnull uint8_t *)buffer
 {
-    size_t actual = read(self._readHandle.fileDescriptor, buffer, chunk_size);
+    size_t actual = read(self.readHandle.fileDescriptor, buffer, chunk_size);
     return actual;
 }
 
 - (void)transferWillBecomeInactive:(nonnull OCTActiveFile *)file
 {
-    NSFileHandle *rh = self._readHandle;
-    self._readHandle = nil;
+    NSFileHandle *rh = self.readHandle;
+    self.readHandle = nil;
     [rh closeFile];
 }
 
@@ -104,26 +104,26 @@
 
 - (BOOL)openFileIfNeeded
 {
-    if (self._readHandle) {
+    if (self.readHandle) {
         return YES;
     }
 
-    self._readHandle = [NSFileHandle fileHandleForReadingAtPath:self.path];
+    self.readHandle = [NSFileHandle fileHandleForReadingAtPath:self.path];
 
-    if (! self._readHandle) {
+    if (! self.readHandle) {
         return NO;
     }
 
     struct stat info;
-    if (fstat(self._readHandle.fileDescriptor, &info) == -1) {
+    if (fstat(self.readHandle.fileDescriptor, &info) == -1) {
         DDLogError(@"OCTFileInput: fstat() failed: %s", strerror(errno));
-        [self._readHandle closeFile];
+        [self.readHandle closeFile];
         return NO;
     }
 
     if ((info.st_mode & S_IFMT) != S_IFREG) {
         DDLogError(@"OCTFileInput: %@ is not a regular file", self.path);
-        [self._readHandle closeFile];
+        [self.readHandle closeFile];
         return NO;
     }
 
