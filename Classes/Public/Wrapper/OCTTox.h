@@ -513,7 +513,7 @@
 - (OCTToxFileNumber)fileSendWithFriendNumber:(OCTToxFriendNumber)friendNumber
                                         kind:(OCTToxFileKind)kind
                                     fileSize:(OCTToxFileSize)fileSize
-                                      fileId:(NSString *)fileId
+                                      fileId:(NSData *)fileId
                                     fileName:(NSString *)fileName
                                        error:(NSError **)error;
 
