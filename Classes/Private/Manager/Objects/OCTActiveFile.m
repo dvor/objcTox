@@ -22,22 +22,16 @@
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wshorten-64-to-32"
 
-time_t _OCTGetSystemUptime(void)
+static time_t _OCTGetSystemUptime(void)
 {
-    struct timeval boottime;
-    int mib[2] = {CTL_KERN, KERN_BOOTTIME};
+    clock_serv_t muhclock;
+    mach_timespec_t machtime;
 
-    size_t size = sizeof(boottime);
-    struct timeval now;
+    host_get_clock_service(mach_host_self(), SYSTEM_CLOCK, &muhclock);
+    clock_get_time(muhclock, &machtime);
+    mach_port_deallocate(mach_task_self(), muhclock);
 
-    gettimeofday(&now, NULL);
-
-    time_t uptime = -1;
-    if ((sysctl(mib, 2, &boottime, &size, NULL, 0) != -1) && (boottime.tv_sec != 0)) {
-        uptime = now.tv_sec - boottime.tv_sec;
-    }
-
-    return uptime;
+    return machtime.tv_sec;
 }
 
 @implementation OCTActiveFile
