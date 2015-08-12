@@ -773,7 +773,7 @@ void (*_tox_self_get_public_key)(const Tox *tox, uint8_t *public_key);
 - (OCTToxFileNumber)fileSendWithFriendNumber:(OCTToxFriendNumber)friendNumber
                                         kind:(OCTToxFileKind)kind
                                     fileSize:(OCTToxFileSize)fileSize
-                                      fileId:(NSString *)fileId
+                                      fileId:(NSData *)fileId
                                     fileName:(NSString *)fileName
                                        error:(NSError **)error
 {
@@ -791,8 +791,10 @@ void (*_tox_self_get_public_key)(const Tox *tox, uint8_t *public_key);
             break;
     }
 
-    if (fileId.length) {
-        cFileId = (const uint8_t *)[fileId cStringUsingEncoding:NSUTF8StringEncoding];
+    if (fileId.length == kOCTToxFileIdLength) {
+        cFileId = fileId.bytes;
+    } else if (fileId) {
+        DDLogWarn(@"warning: fileId length must be kOCTToxFileIdLength bytes (you sent %lu)", (unsigned long)fileId.length);
     }
 
     if (fileName.length) {
