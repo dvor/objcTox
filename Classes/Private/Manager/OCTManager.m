@@ -104,6 +104,7 @@
 
     OCTSubmanagerFiles *files = [OCTSubmanagerFiles new];
     files.dataSource = self;
+    [files configure];
     files.queue = self.tox.queue;
     _files = files;
 
