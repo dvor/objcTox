@@ -112,6 +112,16 @@ void _OCTExceptFileNotInbound(void)
     return self;
 }
 
+- (void)configure
+{
+    [[self.dataSource managerGetRealmManager] updateObjectsOfClass:[OCTMessageFile class] withoutNotificationUsingBlock:^(OCTMessageFile *theObject) {
+        if ((theObject.fileState != OCTMessageFileStateCanceled)
+            && (theObject.fileState != OCTMessageFileStateReady)) {
+            theObject.fileState = OCTMessageFileStateInterrupted;
+        }
+    }];
+}
+
 #pragma mark - Public API
 
 - (nullable OCTActiveFile *)sendFile:(nonnull NSString *)name
