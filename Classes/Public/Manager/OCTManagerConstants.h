@@ -54,7 +54,9 @@ typedef NS_ENUM(NSInteger, OCTMessageFileState) {
     OCTMessageFileStateInterrupted
 };
 
-/* Roughly corresponds to TOX_FILE_KIND in toxcore */
+/* Roughly corresponds to TOX_FILE_KIND in toxcore
+ * You should not trust this property as file data is not checked for
+ * valid image/video/whatever data. */
 typedef NS_ENUM(NSInteger, OCTFileUsage) {
     /**
      * Standard type of file transfer.
