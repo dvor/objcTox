@@ -14,6 +14,7 @@
 
 @property (copy)   NSString *path;
 @property (strong) NSFileHandle *readHandle;
+@property NSTimeInterval modifiedTime;
 @property OCTToxFileSize knownFileSize;
 
 @end
@@ -26,6 +27,15 @@
 
     if (self) {
         self.path = path;
+        NSError *error = nil;
+        NSDictionary *attrs = [[NSFileManager defaultManager] attributesOfItemAtPath:[path stringByResolvingSymlinksInPath] error:&error];
+
+        if (error) {
+            DDLogError(@"unable to stat file at path: %@ because: %@", path, error);
+            return nil;
+        }
+
+        self.modifiedTime = attrs.fileModificationDate.timeIntervalSince1970;
     }
 
     return self;
@@ -39,6 +49,7 @@
 
     if (self) {
         self.path = [aDecoder decodeObjectForKey:@"_filePath"];
+        self.modifiedTime = [aDecoder decodeDoubleForKey:@"modifiedTime"];
     }
 
     return self;
@@ -47,6 +58,7 @@
 - (void)encodeWithCoder:(nonnull NSCoder *)aCoder
 {
     [aCoder encodeObject:self.path forKey:@"_filePath"];
+    [aCoder encodeDouble:self.modifiedTime forKey:@"modifiedTime"];
 }
 
 #pragma mark - OCTFileSending
@@ -98,6 +110,19 @@
 - (void)transferWillComplete:(nonnull OCTActiveFile *)file
 {
     // nothing!
+}
+
+- (BOOL)canBeResumedNow
+{
+    NSError *error = nil;
+    NSDictionary *attrs = [[NSFileManager defaultManager] attributesOfItemAtPath:[self.path stringByResolvingSymlinksInPath] error:&error];
+
+    if (error) {
+        DDLogError(@"unable to stat file at path: %@ because: %@", self.path, error);
+        return NO;
+    }
+
+    return self.modifiedTime == attrs.fileModificationDate.timeIntervalSince1970;
 }
 
 #pragma mark - Private
