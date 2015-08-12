@@ -54,8 +54,8 @@
     self = [super init];
 
     if (self) {
-        self._finalPathName = [aDecoder valueForKey:@"_finalPathName"];
-        self._temporaryPathName = [aDecoder valueForKey:@"_temporaryPathName"];
+        self._finalPathName = [aDecoder decodeObjectForKey:@"_finalPathName"];
+        self._temporaryPathName = [aDecoder decodeObjectForKey:@"_temporaryPathName"];
     }
 
     return self;
@@ -67,17 +67,19 @@
     [aCoder encodeObject:self._temporaryPathName forKey:@"_temporaryPathName"];
 }
 
-#pragma mark - <OCTFileReceiving>
+#pragma mark - <OCTFileConduit>
 
 - (BOOL)transferWillBecomeActive:(nonnull OCTActiveFile *)file
 {
-    [[NSFileManager defaultManager] createFileAtPath:self._temporaryPathName contents:nil
+    if (! [[NSFileManager defaultManager] fileExistsAtPath:self._temporaryPathName]) {
+        [[NSFileManager defaultManager] createFileAtPath:self._temporaryPathName contents:nil
 #if TARGET_OS_IPHONE
-                                          attributes:@{NSFileProtectionKey : NSFileProtectionCompleteUntilFirstUserAuthentication}
+                                              attributes:@{NSFileProtectionKey : NSFileProtectionCompleteUntilFirstUserAuthentication}
 #else
-     attributes:nil
+         attributes:nil
 #endif
-    ];
+        ];
+    }
     self._writeHandle = [NSFileHandle fileHandleForUpdatingAtPath:self._temporaryPathName];
     DDLogDebug(@"OCTFileOutput transferWillBecomeActive...");
 
@@ -121,6 +123,14 @@
     }
     return YES;
 }
+
+- (BOOL)canBeResumedNow
+{
+    // TODO: do something about crashes, etc. where it's not possible to determine the file's state.
+    return YES;
+}
+
+#pragma mark - <OCTFileReceiving>
 
 - (void)writeBytes:(OCTToxFileSize)chunk_size fromBuffer:(nonnull const uint8_t *)buffer
 {

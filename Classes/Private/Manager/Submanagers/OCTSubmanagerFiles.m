@@ -16,6 +16,7 @@
 #import "OCTActiveFile+Variants.h"
 #import "OCTSubmanagerFiles+Private.h"
 #import "OCTFileIO+Private.h"
+#import "RBQFetchRequest.h"
 #import "DDLog.h"
 
 #pragma clang diagnostic push
@@ -295,6 +296,109 @@ void _OCTExceptFileNotInbound(void)
     [self setActiveFile:nil forFriendNumber:file.friendNumber fileNumber:file.fileMessage.fileNumber];
 }
 
+/* Sending file */
+- (BOOL)tryToResumeFile:(OCTMessageAbstract *)msga
+{
+    if (msga.messageFile.restorationTag.length == 0) {
+        return NO;
+    }
+
+    id<OCTFileSending> sender = [NSKeyedUnarchiver unarchiveObjectWithData:msga.messageFile.restorationTag];
+    if (! sender) {
+        DDLogWarn(@"OCTSubmanagerFiles WARNING: while trying to resume outgoing file %@, I decoded a nil conduit.", msga);
+        return NO;
+    }
+    if (! [sender conformsToProtocol:@protocol(OCTFileSending)]) {
+        DDLogWarn(@"OCTSubmanagerFiles WARNING: while trying to resume outgoing file %@, I decoded a conduit (%@) that did not conform to OCTFileSending.", msga, sender);
+        return NO;
+    }
+
+    if (! sender.canBeResumedNow) {
+        DDLogDebug(@"OCTSubmanagerFiles: sender said NO for resuming file %@", msga);
+        return NO;
+    }
+
+    // then ok, we can resume
+
+    OCTMessageFile *mf = msga.messageFile;
+    OCTFriend *f = [msga.chat.friends firstObject];
+    NSError *error = nil;
+
+    OCTToxFileNumber n = [[self.dataSource managerGetTox] fileSendWithFriendNumber:f.friendNumber
+                                                                              kind:_OCTFileUsageToToxFileKind(mf.fileUsage)
+                                                                          fileSize:sender.fileSize
+                                                                            fileId:mf.fileTag
+                                                                          fileName:mf.fileName
+                                                                             error:&error];
+
+    if (error) {
+        DDLogError(@"toxcore rejected file send: %@", error);
+        return NO;
+    }
+
+    [[self.dataSource managerGetRealmManager] updateObject:msga withBlock:^(OCTMessageAbstract *msga_) {
+        msga_.dateInterval = [NSDate date].timeIntervalSince1970;
+        msga_.messageFile.fileNumber = n;
+        msga_.messageFile.pauseFlags = OCTPauseFlagsOther;
+    }];
+
+    OCTActiveOutboundFile *outf = [self _createSendingFileForFriend:f message:msga.messageFile provider:sender];
+    [self setActiveFile:outf forFriendNumber:outf.friendNumber fileNumber:n];
+    return YES;
+}
+
+/* Resuming file */
+- (BOOL)tryToResumeFile:(OCTMessageAbstract *)msga
+      withNewFileNumber:(OCTToxFileNumber)fileNumber
+                   kind:(OCTFileUsage)kind
+               fileSize:(OCTToxFileSize)fileSize
+               fileName:(NSString *)fileName
+{
+    OCTMessageFile *fileMsg = msga.messageFile;
+
+    if (fileMsg.restorationTag.length == 0) {
+        return NO;
+    }
+
+    id<OCTFileReceiving> rcvr = [NSKeyedUnarchiver unarchiveObjectWithData:fileMsg.restorationTag];
+    if (! rcvr) {
+        DDLogWarn(@"OCTSubmanagerFiles WARNING: while trying to resume incoming file %@, I decoded a nil conduit.", msga);
+        return NO;
+    }
+    if (! [rcvr conformsToProtocol:@protocol(OCTFileReceiving)]) {
+        DDLogWarn(@"OCTSubmanagerFiles WARNING: while trying to resume incoming file %@, I decoded a conduit (%@) that did not conform to OCTFileReceiving.", msga, rcvr);
+        return NO;
+    }
+
+    if (! rcvr.canBeResumedNow) {
+        DDLogDebug(@"OCTSubmanagerFiles: receiver said NO for resuming file %@", msga);
+        return NO;
+    }
+
+    // now it can be resumed
+
+    NSError *error = nil;
+    [[self.dataSource managerGetTox] fileSeekForFileNumber:fileNumber friendNumber:msga.sender.friendNumber position:fileMsg.filePosition error:&error];
+
+    if (error) {
+        DDLogError(@"toxcore failed seeking the file to position %lld", fileMsg.filePosition);
+        [[self.dataSource managerGetTox] fileSendControlForFileNumber:fileNumber friendNumber:msga.sender.friendNumber control:OCTToxFileControlCancel error:&error];
+        return NO;
+    }
+
+    [[self.dataSource managerGetRealmManager] updateObject:msga withBlock:^(OCTMessageAbstract *msga_) {
+        msga_.dateInterval = [NSDate date].timeIntervalSince1970;
+        msga_.messageFile.fileNumber = fileNumber;
+        msga_.messageFile.fileState = OCTMessageFileStatePaused;
+        msga_.messageFile.pauseFlags = OCTPauseFlagsSelf;
+    }];
+
+    OCTActiveInboundFile *inf = [self _createReceivingFileForMessage:msga];
+    inf.receiver = rcvr;
+    [self setActiveFile:inf forFriendNumber:msga.sender.friendNumber fileNumber:fileNumber];
+    return YES;
+}
+
 #pragma mark - OCTToxDelegate.
 
 - (void)     tox:(OCTTox *)tox friendConnectionStatusChanged:(OCTToxConnectionStatus)status
@@ -308,6 +412,15 @@ void _OCTExceptFileNotInbound(void)
 
         for (OCTActiveFile *f in files) {
             [f _interrupt];
+        }
+    }
+    else {
+        RBQFetchRequest *get = [[self.dataSource managerGetRealmManager] fetchRequestForClass:[OCTMessageAbstract class]
+                                                                                withPredicate:[NSPredicate predicateWithFormat:@"messageFile.fileState == %d && sender == nil", OCTMessageFileStateInterrupted]];
+        RLMResults *objs = [get fetchObjects];
+
+        for (OCTMessageAbstract *msga in objs) {
+            [self tryToResumeFile:msga];
         }
     }
 }
@@ -370,8 +483,33 @@ void _OCTExceptFileNotInbound(void)
 
     NSAssert(tag.length != 0, @"Anomaly: this file (%u#%u) has no tag. Please report a bug.", friendNumber, fileNumber);
 
+    if (kind > OCTToxFileKindAvatar) {
+        DDLogInfo(@"received a non-enumed file kind (outdated toxcore?); cancelling it");
+
+        NSError *error = nil;
+        [[self.dataSource managerGetTox] fileSendControlForFileNumber:fileNumber friendNumber:friendNumber control:OCTToxFileControlCancel error:&error];
+
+        if (error) {
+            DDLogError(@"nevermind, got error %@ and now the client is screwed", error);
+        }
+
+        return;
+    }
+
     if (kind == OCTToxFileKindAvatar) {}
     else {
+        RBQFetchRequest *get = [[self.dataSource managerGetRealmManager] fetchRequestForClass:[OCTMessageAbstract class]
+                                                                                withPredicate:[NSPredicate predicateWithFormat:@"sender.friendNumber == %d && messageFile.fileState == %d", friendNumber, OCTMessageFileStateInterrupted]];
+        for (OCTMessageAbstract *msga in [get fetchObjects]) {
+            if ([msga.messageFile.fileTag isEqualToData:tag]) {
+                BOOL yes = [self tryToResumeFile:msga withNewFileNumber:fileNumber kind:_OCTToxFileKindToFileUsage(kind) fileSize:fileSize fileName:fileName];
+                if (yes) {
+                    return;
+                }
+                break;
+            }
+        }
+
         OCTMessageFile *newFileMessage = [[OCTMessageFile alloc] init];
         newFileMessage.fileNumber = fileNumber;
         newFileMessage.fileSize = fileSize;

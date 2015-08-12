@@ -513,7 +513,7 @@ static time_t _OCTGetSystemUptime(void)
     uint8_t buf[csize];
 
     size_t actual = [self.sender readBytes:csize intoBuffer:buf];
-    DDLogDebug(@"_sendChunkForSize: %zu", actual);
+    // DDLogDebug(@"_sendChunkForSize: %zu", actual);
     [[self.fileManager.dataSource managerGetTox] fileSendChunk:buf forFileNumber:self.fileMessage.fileNumber friendNumber:self.friendNumber position:p length:actual error:nil];
     [self _countBytes:actual];
     [self.fileManager scheduleProgressNotificationForFile:self];

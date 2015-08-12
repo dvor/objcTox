@@ -793,7 +793,8 @@ void (*_tox_self_get_public_key)(const Tox *tox, uint8_t *public_key);
 
     if (fileId.length == kOCTToxFileIdLength) {
         cFileId = fileId.bytes;
-    } else if (fileId) {
+    }
+    else if (fileId) {
         DDLogWarn(@"warning: fileId length must be kOCTToxFileIdLength bytes (you sent %lu)", (unsigned long)fileId.length);
     }
 

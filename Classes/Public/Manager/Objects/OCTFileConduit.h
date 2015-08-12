@@ -52,6 +52,14 @@
  */
 - (void)transferWillComplete:(nonnull OCTActiveFile *)file;
 
+/**
+ * Whether it is possible to resume the file in its current state.
+ * For example, you could use this method to check if the file was modified
+ * after the transfer was interrupted and return NO, preventing the user from
+ * receiving/sending a corrupted file.
+ * This method will not be called if `-moveToPosition:` is not implemented.
+ */
+- (BOOL)canBeResumedNow;
 @end
 
 @protocol OCTFileSending <OCTFileConduit>
