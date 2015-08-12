@@ -366,7 +366,15 @@ void _OCTExceptFileNotInbound(void)
         newFileMessage.fileNumber = fileNumber;
         newFileMessage.fileSize = fileSize;
         newFileMessage.fileName = _OCTSanitizeFilename(fileName);
+
         newFileMessage.fileUsage = _OCTToxFileKindToFileUsage(kind);
+
+#ifdef OBJCTOX_SHOULD_BE_COMPATIBLE_WITH_UTOX_INLINE_IMAGES
+        if ([fileName isEqualToString:@"utox-inline.png"]) {
+            newFileMessage.fileUsage = OCTFileUsageInlinePhoto;
+        }
+#endif
+
         newFileMessage.fileState = OCTMessageFileStateWaitingConfirmation;
         newFileMessage.filePath = @"";
         newFileMessage.fileUTI = @"";
