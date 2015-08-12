@@ -46,6 +46,17 @@ static OCTFileUsage _OCTToxFileKindToFileUsage(OCTToxFileKind k)
     }
 }
 
+static OCTToxFileKind _OCTFileUsageToToxFileKind(OCTFileUsage k)
+{
+    switch (k) {
+        // when the sticker PR gets merged, uncomment this.
+        // case OCTFileUsageSticker:
+        //     return 5413;
+        default:
+            return OCTToxFileKindData;
+    }
+}
+
 void _OCTExceptFileNotMessageFile(void)
 {
     @throw [NSException exceptionWithName:@"OCTFileNotMessageFileException"
@@ -117,7 +128,7 @@ void _OCTExceptFileNotInbound(void)
     NSError *err = nil;
 
     OCTFriend *f = chat.friends.firstObject;
-    OCTToxFileNumber n = [[self.dataSource managerGetTox] fileSendWithFriendNumber:f.friendNumber kind:OCTToxFileKindData fileSize:file.fileSize fileId:nil fileName:name error:&err];
+    OCTToxFileNumber n = [[self.dataSource managerGetTox] fileSendWithFriendNumber:f.friendNumber kind:_OCTFileUsageToToxFileKind(type) fileSize:file.fileSize fileId:nil fileName:name error:&err];
 
     if (err) {
         if (error) {
