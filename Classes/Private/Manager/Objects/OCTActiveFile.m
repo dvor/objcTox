@@ -14,6 +14,11 @@
 #import "OCTSubmanagerFiles+Private.h"
 #import "OCTSubmanagerObjects+Private.h"
 #import "OCTRealmManager.h"
+
+#include <mach/clock.h>
+#include <mach/mach_host.h>
+#include <mach/mach_port.h>
+
 #undef LOG_LEVEL_DEF
 #define LOG_LEVEL_DEF LOG_LEVEL_DEBUG
 
