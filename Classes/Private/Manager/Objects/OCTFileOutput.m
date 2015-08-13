@@ -21,7 +21,7 @@
 @implementation OCTFileOutput
 
 // Call this when the user asks OCTSubmanagerFiles for a default saver.
-- (instancetype)_initWithConfigurator:(id<OCTFileStorageProtocol>)cf
+- (instancetype)initWithConfigurator:(id<OCTFileStorageProtocol>)cf
 {
     self = [super init];
 

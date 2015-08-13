@@ -22,7 +22,7 @@
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wshorten-64-to-32"
 
-static time_t _OCTGetSystemUptime(void)
+static time_t OCTGetSystemUptime(void)
 {
     clock_serv_t muhclock;
     mach_timespec_t machtime;
@@ -63,7 +63,7 @@ static time_t _OCTGetSystemUptime(void)
 
 #pragma mark - Speed counting stuff
 
-- (void)_incrementRollingIndex:(long)n
+- (void)incrementRollingIndex:(long)n
 {
     @synchronized(self) {
         for (int i = 0; i < n; ++i) {
@@ -73,11 +73,11 @@ static time_t _OCTGetSystemUptime(void)
     }
 }
 
-- (void)_countBytes:(NSUInteger)size
+- (void)countBytes:(NSUInteger)size
 {
     self.bytesMoved += size;
 
-    time_t now = _OCTGetSystemUptime();
+    time_t now = OCTGetSystemUptime();
     time_t delta = now - self.lastCountedTime;
     self.lastCountedTime = now;
 
@@ -85,86 +85,86 @@ static time_t _OCTGetSystemUptime(void)
              "based time travel. Please file a bug.");
 
     if (delta != 0) {
-        [self _incrementRollingIndex:delta];
+        [self incrementRollingIndex:delta];
     }
 
     self.transferRateCounters[self.rollingIndex] += size;
 }
 
-- (void)_wipeCounters
+- (void)wipeCounters
 {
     @synchronized(self) {
         for (int i = 0; i < AVERAGE_SECONDS; ++i) {
             self.transferRateCounters[i] = -1;
         }
-        self.lastCountedTime = _OCTGetSystemUptime();
+        self.lastCountedTime = OCTGetSystemUptime();
     }
 }
 
 #pragma mark - Private API
 
-- (id<OCTFileConduit>)_conduit
+- (id<OCTFileConduit>)conduit
 {
     @throw [NSException exceptionWithName:@"OCTFileException" reason:@"Only subclasses of OCTActiveFile can be used." userInfo:nil];
     return nil;
 }
 
-- (void)_control:(OCTToxFileControl)ctl
+- (void)control:(OCTToxFileControl)ctl
 {
     switch (ctl) {
         case OCTToxFileControlCancel: {
             DDLogDebug(@"_control: obeying cancel message from remote.");
 
             dispatch_async(self.fileManager.queue, ^{
-                [self _closeConduitIfNeeded];
+                [self closeConduitIfNeeded];
 
                 dispatch_async(dispatch_get_main_queue(), ^{
                     [self.fileManager removeFile:self];
                 });
             });
-            [self _markFileAsCancelled:self.fileMessage];
+            [self markFileAsCancelled:self.fileMessage];
             break;
         }
         case OCTToxFileControlPause:
             DDLogDebug(@"_control: obeying pause message from remote.");
-            [self _markFileAsPaused:self.fileMessage withFlags:self.fileMessage.pauseFlags | OCTPauseFlagsOther];
+            [self markFileAsPaused:self.fileMessage withFlags:self.fileMessage.pauseFlags | OCTPauseFlagsOther];
             break;
         case OCTToxFileControlResume: {
             DDLogDebug(@"_control: obeying resume message from remote.");
             if (self.fileMessage.pauseFlags == OCTPauseFlagsOther) {
                 dispatch_sync(self.fileManager.queue, ^{
-                    [self _openConduitIfNeeded];
+                    [self openConduitIfNeeded];
                 });
-                [self _resumeFile:self.fileMessage];
+                [self resumeFile:self.fileMessage];
             }
             else {
-                [self _markFileAsPaused:self.fileMessage withFlags:OCTPauseFlagsSelf];
+                [self markFileAsPaused:self.fileMessage withFlags:OCTPauseFlagsSelf];
             }
             break;
         }
     }
 }
 
-- (void)_interrupt
+- (void)interrupt
 {
     dispatch_async(self.fileManager.queue, ^{
-        [self _closeConduitIfNeeded];
+        [self closeConduitIfNeeded];
 
         dispatch_async(dispatch_get_main_queue(), ^{
             [self.fileManager removeFile:self];
         });
     });
 
-    [self _markFileAsInterrupted:self.fileMessage];
+    [self markFileAsInterrupted:self.fileMessage];
 }
 
-- (BOOL)_openConduitIfNeeded
+- (BOOL)openConduitIfNeeded
 {
     if (! self.isConduitOpen) {
-        BOOL ret = [self._conduit transferWillBecomeActive:self];
+        BOOL ret = [self.conduit transferWillBecomeActive:self];
 
-        if ([self._conduit respondsToSelector:@selector(moveToPosition:)]) {
-            [self._conduit moveToPosition:self.bytesMoved];
+        if ([self.conduit respondsToSelector:@selector(moveToPosition:)]) {
+            [self.conduit moveToPosition:self.bytesMoved];
         }
 
         self.isConduitOpen = ret;
@@ -175,18 +175,18 @@ static time_t _OCTGetSystemUptime(void)
     }
 }
 
-- (void)_closeConduitIfNeeded
+- (void)closeConduitIfNeeded
 {
     if (! self.isConduitOpen) {
         return;
     }
     else {
-        [self._conduit transferWillBecomeInactive:self];
+        [self.conduit transferWillBecomeInactive:self];
         self.isConduitOpen = NO;
     }
 }
 
-- (void)_sendProgressUpdateNow
+- (void)sendProgressUpdateNow
 {
     // don't post a notification if we're paused
     // (sometimes one manages to sneak in after we've updated the state in realm,
@@ -247,7 +247,7 @@ static time_t _OCTGetSystemUptime(void)
 
 #pragma mark - Realm update stuff
 
-- (void)_markFileAsCancelled:(OCTMessageFile *)file
+- (void)markFileAsCancelled:(OCTMessageFile *)file
 {
     DDLogDebug(@"Marking file %@ as CANCELLED.", file);
 
@@ -262,7 +262,7 @@ static time_t _OCTGetSystemUptime(void)
     [[self.fileManager.dataSource managerGetRealmManager] noteMessageFileChanged:file];
 }
 
-- (void)_markFileAsCompleted:(OCTMessageFile *)file withFinalDestination:(NSString *)fd
+- (void)markFileAsCompleted:(OCTMessageFile *)file withFinalDestination:(NSString *)fd
 {
     DDLogDebug(@"Marking file %@ as COMPLETE.", file);
 
@@ -277,15 +277,15 @@ static time_t _OCTGetSystemUptime(void)
     [[self.fileManager.dataSource managerGetRealmManager] noteMessageFileChanged:file];
 }
 
-- (void)_markFileAsPaused:(OCTMessageFile *)file withFlags:(OCTPauseFlags)flag
+- (void)markFileAsPaused:(OCTMessageFile *)file withFlags:(OCTPauseFlags)flag
 {
     DDLogDebug(@"Marking file %@ as PAUSED.", file);
 
     DDLogDebug(@"archiving resume data; if we die we're starting at offset %lld", self.bytesMoved);
 
     NSData *conduitData = nil;
-    if ([self._conduit conformsToProtocol:@protocol(NSCoding)]) {
-        conduitData = [NSKeyedArchiver archivedDataWithRootObject:self._conduit];
+    if ([self.conduit conformsToProtocol:@protocol(NSCoding)]) {
+        conduitData = [NSKeyedArchiver archivedDataWithRootObject:self.conduit];
     }
 
     [[self.fileManager.dataSource managerGetRealmManager] updateObject:file withBlock:^(OCTMessageFile *theObject) {
@@ -297,14 +297,14 @@ static time_t _OCTGetSystemUptime(void)
     [[self.fileManager.dataSource managerGetRealmManager] noteMessageFileChanged:file];
 }
 
-- (void)_markFileAsInterrupted:(OCTMessageFile *)file
+- (void)markFileAsInterrupted:(OCTMessageFile *)file
 {
     DDLogDebug(@"Marking file %@ as INTERRUPTED.", file);
     DDLogDebug(@"archiving resume data; if we die we're starting at offset %lld", self.bytesMoved);
 
     NSData *conduitData = nil;
-    if ([self._conduit conformsToProtocol:@protocol(NSCoding)]) {
-        conduitData = [NSKeyedArchiver archivedDataWithRootObject:self._conduit];
+    if ([self.conduit conformsToProtocol:@protocol(NSCoding)]) {
+        conduitData = [NSKeyedArchiver archivedDataWithRootObject:self.conduit];
     }
 
     [[self.fileManager.dataSource managerGetRealmManager] updateObject:file withBlock:^(OCTMessageFile *theObject) {
@@ -315,13 +315,13 @@ static time_t _OCTGetSystemUptime(void)
     [[self.fileManager.dataSource managerGetRealmManager] noteMessageFileChanged:file];
 }
 
-- (void)_resumeFile:(OCTMessageFile *)file
+- (void)resumeFile:(OCTMessageFile *)file
 {
     DDLogDebug(@"archiving resume data; if we die we're starting at offset %lld", self.bytesMoved);
 
     NSData *conduitData = nil;
-    if ([self._conduit conformsToProtocol:@protocol(NSCoding)]) {
-        conduitData = [NSKeyedArchiver archivedDataWithRootObject:self._conduit];
+    if ([self.conduit conformsToProtocol:@protocol(NSCoding)]) {
+        conduitData = [NSKeyedArchiver archivedDataWithRootObject:self.conduit];
     }
 
     [[self.fileManager.dataSource managerGetRealmManager] updateObject:file withBlock:^(OCTMessageFile *theObject) {
@@ -356,7 +356,7 @@ static time_t _OCTGetSystemUptime(void)
 
     __block BOOL openOK = NO;
     dispatch_sync(self.fileManager.queue, ^{
-        openOK = [self _openConduitIfNeeded];
+        openOK = [self openConduitIfNeeded];
     });
 
     if (! openOK) {
@@ -364,7 +364,7 @@ static time_t _OCTGetSystemUptime(void)
 
         [[self.fileManager.dataSource managerGetTox] fileSendControlForFileNumber:self.fileMessage.fileNumber friendNumber:self.friendNumber control:OCTToxFileControlCancel error:nil];
 
-        [self _markFileAsCancelled:self.fileMessage];
+        [self markFileAsCancelled:self.fileMessage];
 
         if (error) {
             NSString *failureReason = @"The file data provider/receiver could not be opened.";
@@ -373,7 +373,7 @@ static time_t _OCTGetSystemUptime(void)
         return NO;
     }
 
-    [self _wipeCounters];
+    [self wipeCounters];
 
     ok = [[self.fileManager.dataSource managerGetTox] fileSendControlForFileNumber:self.fileMessage.fileNumber friendNumber:self.friendNumber control:OCTToxFileControlResume error:error];
 
@@ -382,11 +382,11 @@ static time_t _OCTGetSystemUptime(void)
     }
     else {
         if ((self.fileMessage.pauseFlags == OCTPauseFlagsSelf) || (self.fileMessage.pauseFlags == OCTPauseFlagsNobody)) {
-            [self _resumeFile:self.fileMessage];
+            [self resumeFile:self.fileMessage];
             DDLogInfo(@"OCTActiveFile: no further blocks on file so transitioning to Loading state.");
         }
         else {
-            [self _markFileAsPaused:self.fileMessage withFlags:OCTPauseFlagsOther];
+            [self markFileAsPaused:self.fileMessage withFlags:OCTPauseFlagsOther];
             DDLogInfo(@"OCTActiveFile: we're no longer pausing this file, but our friend still is.");
         }
     }
@@ -407,7 +407,7 @@ static time_t _OCTGetSystemUptime(void)
         return NO;
     }
     else {
-        [self _markFileAsPaused:self.fileMessage withFlags:self.fileMessage.pauseFlags | OCTPauseFlagsSelf];
+        [self markFileAsPaused:self.fileMessage withFlags:self.fileMessage.pauseFlags | OCTPauseFlagsSelf];
         return YES;
     }
 }
@@ -426,13 +426,13 @@ static time_t _OCTGetSystemUptime(void)
     }
     else {
         dispatch_async(self.fileManager.queue, ^{
-            [self _closeConduitIfNeeded];
+            [self closeConduitIfNeeded];
 
             dispatch_async(dispatch_get_main_queue(), ^{
                 [self.fileManager removeFile:self];
             });
         });
-        [self _markFileAsCancelled:self.fileMessage];
+        [self markFileAsCancelled:self.fileMessage];
         return YES;
     }
 }
@@ -441,25 +441,25 @@ static time_t _OCTGetSystemUptime(void)
 
 @implementation OCTActiveInboundFile
 
-- (id<OCTFileConduit>)_conduit
+- (id<OCTFileConduit>)conduit
 {
     return self.receiver;
 }
 
-- (void)_completeFileTransferAndClose
+- (void)completeFileTransferAndClose
 {
     [self.receiver transferWillBecomeInactive:self];
     [self.receiver transferWillComplete:self];
 
     dispatch_async(dispatch_get_main_queue(), ^{
-        [self _markFileAsCompleted:self.fileMessage withFinalDestination:[self.receiver finalDestination]];
+        [self markFileAsCompleted:self.fileMessage withFinalDestination:[self.receiver finalDestination]];
         [self.fileManager removeFile:self];
     });
 }
 
-- (void)_receiveChunkNow:(const uint8_t *)chunk length:(size_t)length atPosition:(OCTToxFileSize)p
+- (void)receiveChunkNow:(const uint8_t *)chunk length:(size_t)length atPosition:(OCTToxFileSize)p
 {
-    // NSLog(@"_receiveChunkNow at %ld", _OCTGetSystemUptime());
+    // NSLog(@"_receiveChunkNow at %ld", OCTGetSystemUptime());
     if (p != self.bytesMoved + 1) {
         if ([self.receiver respondsToSelector:@selector(moveToPosition:)]) {
             [self.receiver moveToPosition:p];
@@ -471,7 +471,7 @@ static time_t _OCTGetSystemUptime(void)
     }
 
     [self.receiver writeBytes:length fromBuffer:chunk];
-    [self _countBytes:length];
+    [self countBytes:length];
     [self.fileManager scheduleProgressNotificationForFile:self];
 }
 
@@ -479,23 +479,23 @@ static time_t _OCTGetSystemUptime(void)
 
 @implementation OCTActiveOutboundFile
 
-- (id<OCTFileConduit>)_conduit
+- (id<OCTFileConduit>)conduit
 {
     return self.sender;
 }
 
-- (void)_completeFileTransferAndClose
+- (void)completeFileTransferAndClose
 {
     [self.sender transferWillBecomeInactive:self];
     [self.sender transferWillComplete:self];
 
     dispatch_async(dispatch_get_main_queue(), ^{
-        [self _markFileAsCompleted:self.fileMessage withFinalDestination:[self.sender path]];
+        [self markFileAsCompleted:self.fileMessage withFinalDestination:[self.sender path]];
         [self.fileManager removeFile:self];
     });
 }
 
-- (void)_sendChunkForSize:(size_t)csize fromPosition:(OCTToxFileSize)p
+- (void)sendChunkForSize:(size_t)csize fromPosition:(OCTToxFileSize)p
 {
     if (p != self.bytesMoved + 1) {
         if ([self.sender respondsToSelector:@selector(moveToPosition:)]) {
@@ -515,7 +515,7 @@ static time_t _OCTGetSystemUptime(void)
     size_t actual = [self.sender readBytes:csize intoBuffer:buf];
     // DDLogDebug(@"_sendChunkForSize: %zu", actual);
     [[self.fileManager.dataSource managerGetTox] fileSendChunk:buf forFileNumber:self.fileMessage.fileNumber friendNumber:self.friendNumber position:p length:actual error:nil];
-    [self _countBytes:actual];
+    [self countBytes:actual];
     [self.fileManager scheduleProgressNotificationForFile:self];
 }
 
