@@ -17,14 +17,6 @@
 @interface OCTSubmanagerFiles : NSObject
 
 /**
- * This controls whether objcTox will try to resume files transfers for you.
- * If this is NO, transfers can still be resumed on a case-by-case basis, by
- * doing...
- * The default value is YES.
- */
-@property BOOL resumesFiles;
-
-/**
  * Allocate a default file receiver conduit that just writes chunks to disk.
  * @return OCTFileReceiving-conforming object configured to deposit data at a location
  *         specified by your OCTManagerConfiguration.
