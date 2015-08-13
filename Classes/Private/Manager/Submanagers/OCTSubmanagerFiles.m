@@ -163,7 +163,6 @@ void OCTExceptFileNotInbound(void)
     newFileMessage.fileState = OCTMessageFileStatePaused;
     newFileMessage.pauseFlags = OCTPauseFlagsOther;
     newFileMessage.filePath = @"";
-    newFileMessage.fileUTI = @"";
     newFileMessage.filePosition = 0;
     newFileMessage.restorationTag = [NSData data];
     newFileMessage.fileTag = [[self.dataSource managerGetTox] fileGetFileIdForFileNumber:n friendNumber:f.friendNumber error:nil];
@@ -529,7 +528,6 @@ void OCTExceptFileNotInbound(void)
 
         newFileMessage.fileState = OCTMessageFileStateWaitingConfirmation;
         newFileMessage.filePath = @"";
-        newFileMessage.fileUTI = @"";
         newFileMessage.filePosition = 0;
         newFileMessage.fileTag = tag;
         newFileMessage.restorationTag = [NSData data];

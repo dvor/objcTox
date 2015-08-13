@@ -63,13 +63,6 @@
 @property NSString *filePath;
 
 /**
- * Uniform Type Identifier of file.
- * For incoming [sender != nil] files, this property is not available until
- * fileState is OCTMessageFileTypeReady.
- */
-@property NSString *fileUTI;
-
-/**
  * NSCoded data for this file's tag (file ID, in toxcore). objcTox uses this
  * internally for resumption purposes. Do not access or modify this property.
  */

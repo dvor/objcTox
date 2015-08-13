@@ -21,7 +21,7 @@
 #undef LOG_LEVEL_DEF
 #define LOG_LEVEL_DEF LOG_LEVEL_VERBOSE
 
-static const uint64_t kCurrentSchemeVersion = 1;
+static const uint64_t kCurrentSchemeVersion = 7;
 
 @interface OCTRealmManager ()
 
