@@ -1,4 +1,5 @@
 language: objective-c
+osx_image: xcode6.4
 
 notifications:
     email:
@@ -9,9 +10,8 @@ notifications:
 before_install:
     - gem install slather -N
     - gem install cocoapods
-    - brew update
-    - brew unlink xctool
-    - brew install xctool
+    # fixing issue with homebrew https://github.com/Homebrew/homebrew/issues/42553
+    - brew update; brew update
     - brew install uncrustify
     - pod install
 
