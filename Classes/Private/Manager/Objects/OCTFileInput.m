@@ -10,6 +10,9 @@
 #import "DDLog.h"
 #import "OCTSubmanagerFiles.h"
 
+#undef LOG_LEVEL_DEF
+#define LOG_LEVEL_DEF LOG_LEVEL_DEBUG
+
 @interface OCTFileInput ()
 
 @property (copy)   NSString *path;

@@ -19,6 +19,9 @@
 #import "RBQFetchRequest.h"
 #import "DDLog.h"
 
+#undef LOG_LEVEL_DEF
+#define LOG_LEVEL_DEF LOG_LEVEL_DEBUG
+
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wshorten-64-to-32"
 

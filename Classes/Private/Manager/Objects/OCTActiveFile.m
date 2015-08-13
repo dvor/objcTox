@@ -14,7 +14,8 @@
 #import "OCTSubmanagerFiles+Private.h"
 #import "OCTSubmanagerObjects+Private.h"
 #import "OCTRealmManager.h"
-#include <sys/sysctl.h>
+#undef LOG_LEVEL_DEF
+#define LOG_LEVEL_DEF LOG_LEVEL_DEBUG
 
 /* these are annoying, and because we get all file numbers from toxcore,
  * casting will never truncate them because they were never longs to begin

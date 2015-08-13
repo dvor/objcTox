@@ -10,6 +10,9 @@
 #import "OCTSubmanagerFiles.h"
 #import "OCTFileStorageProtocol.h"
 
+#undef LOG_LEVEL_DEF
+#define LOG_LEVEL_DEF LOG_LEVEL_DEBUG
+
 @interface OCTFileOutput ()
 
 @property (copy)   NSString *_finalPathName;
