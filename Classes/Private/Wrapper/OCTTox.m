@@ -777,6 +777,9 @@ void (*_tox_self_get_public_key)(const Tox *tox, uint8_t *public_key);
     if (result) {
         fileId = [NSData dataWithBytesNoCopy:cFileId length:kOCTToxFileIdLength freeWhenDone:YES];
     }
+    else {
+        free(cFileId);
+    }
 
     return fileId;
 }
