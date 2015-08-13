@@ -10,6 +10,6 @@
 
 @interface OCTFileOutput ()
 
-- (instancetype)_initWithConfigurator:(id<OCTFileStorageProtocol>)cf;
+- (instancetype)initWithConfigurator:(id<OCTFileStorageProtocol>)cf;
 
 @end

@@ -22,7 +22,7 @@
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wshorten-64-to-32"
 
-static NSString *_OCTSanitizeFilename(NSString *filename)
+static NSString *OCTSanitizeFilename(NSString *filename)
 {
     // TODO: maybe get rid of nulls too
     NSMutableString *mut = filename.mutableCopy;
@@ -33,11 +33,11 @@ static NSString *_OCTSanitizeFilename(NSString *filename)
     return mut;
 }
 
-static OCTFileUsage _OCTToxFileKindToFileUsage(OCTToxFileKind k)
+static OCTFileUsage OCTToxFileKindToFileUsage(OCTToxFileKind k)
 {
     switch (k) {
         case OCTToxFileKindAvatar:
-            NSCAssert(0, @"Grave error: OCTFileKindAvatar passed to _OCTToxFileKindToFileUsage."
+            NSCAssert(0, @"Grave error: OCTFileKindAvatar passed to OCTToxFileKindToFileUsage."
                       " Please report this on GitHub.");
             return 0;
         case OCTToxFileKindData:
@@ -47,7 +47,7 @@ static OCTFileUsage _OCTToxFileKindToFileUsage(OCTToxFileKind k)
     }
 }
 
-static OCTToxFileKind _OCTFileUsageToToxFileKind(OCTFileUsage k)
+static OCTToxFileKind OCTFileUsageToToxFileKind(OCTFileUsage k)
 {
     switch (k) {
         // when the sticker PR gets merged, uncomment this.
@@ -58,29 +58,29 @@ static OCTToxFileKind _OCTFileUsageToToxFileKind(OCTFileUsage k)
     }
 }
 
-void _OCTExceptFileNotMessageFile(void)
+void OCTExceptFileNotMessageFile(void)
 {
     @throw [NSException exceptionWithName:@"OCTFileNotMessageFileException"
                                    reason:@"The OCTMessageAbstract passed to saveFileFromMessage:... was not "
-            "a file transfer. Break on _OCTExceptFileNotMessageFile to debug."
+            "a file transfer. Break on OCTExceptFileNotMessageFile to debug."
                                  userInfo:nil];
 }
 
-void _OCTExceptFileNotWaitingConfirmation(void)
+void OCTExceptFileNotWaitingConfirmation(void)
 {
     @throw [NSException exceptionWithName:@"OCTFileNotWaitingConfirmationException"
                                    reason:@"saveFileFromMessage: should only be used on new files. "
             "For existing files, use activeFileForMessage: and then "
             "resume that with resumeWithError:."
-            "Break on _OCTExceptFileNotWaitingConfirmation to debug."
+            "Break on OCTExceptFileNotWaitingConfirmation to debug."
             userInfo:nil];
 }
 
-void _OCTExceptFileNotInbound(void)
+void OCTExceptFileNotInbound(void)
 {
     @throw [NSException exceptionWithName:@"OCTFileNotInboundException"
                                    reason:@"The OCTMessageAbstract passed to saveFileFromMessage:... was not "
-            "an incoming file transfer. Break on _OCTExceptFileNotInbound to debug."
+            "an incoming file transfer. Break on OCTExceptFileNotInbound to debug."
                                  userInfo:nil];
 }
 
@@ -139,7 +139,7 @@ void _OCTExceptFileNotInbound(void)
     NSError *err = nil;
 
     OCTFriend *f = chat.friends.firstObject;
-    OCTToxFileNumber n = [[self.dataSource managerGetTox] fileSendWithFriendNumber:f.friendNumber kind:_OCTFileUsageToToxFileKind(type) fileSize:file.fileSize fileId:nil fileName:name error:&err];
+    OCTToxFileNumber n = [[self.dataSource managerGetTox] fileSendWithFriendNumber:f.friendNumber kind:OCTFileUsageToToxFileKind(type) fileSize:file.fileSize fileId:nil fileName:name error:&err];
 
     if (err) {
         if (error) {
@@ -170,7 +170,7 @@ void _OCTExceptFileNotInbound(void)
     newAbstractMessage.chat = chat;
     newAbstractMessage.messageFile = newFileMessage;
 
-    OCTActiveOutboundFile *send = [self _createSendingFileForFriend:f message:newFileMessage provider:file];
+    OCTActiveOutboundFile *send = [self createSendingFileForFriend:f message:newFileMessage provider:file];
     [self setActiveFile:send forFriendNumber:f.friendNumber fileNumber:n];
     self.activeFiles[@(f.friendNumber)][@(n)] = send;
 
@@ -196,18 +196,18 @@ void _OCTExceptFileNotInbound(void)
     NSParameterAssert(saver);
 
     if (! msg.messageFile) {
-        _OCTExceptFileNotMessageFile();
+        OCTExceptFileNotMessageFile();
         return nil;
     }
 
     if (msg.messageFile.fileState != OCTMessageFileStateWaitingConfirmation) {
-        _OCTExceptFileNotWaitingConfirmation();
+        OCTExceptFileNotWaitingConfirmation();
         return nil;
     }
 
     OCTActiveInboundFile *f = (OCTActiveInboundFile *)[self activeFileForMessage:msg];
     if (! [f isKindOfClass:[OCTActiveInboundFile class]]) {
-        _OCTExceptFileNotInbound();
+        OCTExceptFileNotInbound();
         return nil;
     }
 
@@ -232,7 +232,7 @@ void _OCTExceptFileNotInbound(void)
 
 - (nonnull id<OCTFileReceiving>)newDefaultReceiver
 {
-    return [[OCTFileOutput alloc] _initWithConfigurator:[self.dataSource managerGetFileStorage]];
+    return [[OCTFileOutput alloc] initWithConfigurator:[self.dataSource managerGetFileStorage]];
 }
 
 #pragma mark - Private
@@ -258,7 +258,7 @@ void _OCTExceptFileNotInbound(void)
     return self.activeFiles[@(fn)][@(file)];
 }
 
-- (nonnull OCTActiveOutboundFile *)_createSendingFileForFriend:(OCTFriend *)f message:(OCTMessageFile *)msg provider:(id<OCTFileSending>)prov
+- (nonnull OCTActiveOutboundFile *)createSendingFileForFriend:(OCTFriend *)f message:(OCTMessageFile *)msg provider:(id<OCTFileSending>)prov
 {
     OCTActiveOutboundFile *ret = [[OCTActiveOutboundFile alloc] init];
     ret.fileManager = self;
@@ -269,7 +269,7 @@ void _OCTExceptFileNotInbound(void)
     return ret;
 }
 
-- (nonnull OCTActiveInboundFile *)_createReceivingFileForMessage:(OCTMessageAbstract *)f
+- (nonnull OCTActiveInboundFile *)createReceivingFileForMessage:(OCTMessageAbstract *)f
 {
     OCTActiveInboundFile *ret = [[OCTActiveInboundFile alloc] init];
     ret.fileManager = self;
@@ -286,7 +286,7 @@ void _OCTExceptFileNotInbound(void)
 
 - (void)sendProgressNotificationsNow
 {
-    [self.pendingNotifications makeObjectsPerformSelector:@selector(_sendProgressUpdateNow)];
+    [self.pendingNotifications makeObjectsPerformSelector:@selector(sendProgressUpdateNow)];
     [self.pendingNotifications removeAllObjects];
 }
 
@@ -325,7 +325,7 @@ void _OCTExceptFileNotInbound(void)
     NSError *error = nil;
 
     OCTToxFileNumber n = [[self.dataSource managerGetTox] fileSendWithFriendNumber:f.friendNumber
-                                                                              kind:_OCTFileUsageToToxFileKind(mf.fileUsage)
+                                                                              kind:OCTFileUsageToToxFileKind(mf.fileUsage)
                                                                           fileSize:sender.fileSize
                                                                             fileId:mf.fileTag
                                                                           fileName:mf.fileName
@@ -342,7 +342,7 @@ void _OCTExceptFileNotInbound(void)
         msga_.messageFile.pauseFlags = OCTPauseFlagsOther;
     }];
 
-    OCTActiveOutboundFile *outf = [self _createSendingFileForFriend:f message:msga.messageFile provider:sender];
+    OCTActiveOutboundFile *outf = [self createSendingFileForFriend:f message:msga.messageFile provider:sender];
     [self setActiveFile:outf forFriendNumber:outf.friendNumber fileNumber:n];
     return YES;
 }
@@ -393,7 +393,7 @@ void _OCTExceptFileNotInbound(void)
         msga_.messageFile.pauseFlags = OCTPauseFlagsSelf;
     }];
 
-    OCTActiveInboundFile *inf = [self _createReceivingFileForMessage:msga];
+    OCTActiveInboundFile *inf = [self createReceivingFileForMessage:msga];
     inf.receiver = rcvr;
     [self setActiveFile:inf forFriendNumber:msga.sender.friendNumber fileNumber:fileNumber];
     return YES;
@@ -411,7 +411,7 @@ void _OCTExceptFileNotInbound(void)
         }
 
         for (OCTActiveFile *f in files) {
-            [f _interrupt];
+            [f interrupt];
         }
     }
     else {
@@ -437,10 +437,10 @@ void _OCTExceptFileNotInbound(void)
 
     if (length == 0) {
         [[self.dataSource managerGetTox] fileSendChunk:NULL forFileNumber:fileNumber friendNumber:friendNumber position:position length:0 error:nil];
-        [outboundFile _completeFileTransferAndClose];
+        [outboundFile completeFileTransferAndClose];
     }
     else {
-        [outboundFile _sendChunkForSize:length fromPosition:position];
+        [outboundFile sendChunkForSize:length fromPosition:position];
     }
 }
 
@@ -455,10 +455,10 @@ void _OCTExceptFileNotInbound(void)
     NSAssert([inboundFile isMemberOfClass:[OCTActiveInboundFile class]], @"Received a chunk for a bad file %@!", inboundFile);
 
     if (length == 0) {
-        [inboundFile _completeFileTransferAndClose];
+        [inboundFile completeFileTransferAndClose];
     }
     else {
-        [inboundFile _receiveChunkNow:chunk length:length atPosition:position];
+        [inboundFile receiveChunkNow:chunk length:length atPosition:position];
     }
 }
 
@@ -470,7 +470,7 @@ void _OCTExceptFileNotInbound(void)
 
     NSAssert(f, @"Anomaly: received a control for which we don't have an OCTActiveFile on record for.");
 
-    [f _control:control];
+    [f control:control];
 }
 
 - (void)     tox:(OCTTox *)tox fileReceiveForFileNumber:(OCTToxFileNumber)fileNumber
@@ -502,7 +502,7 @@ void _OCTExceptFileNotInbound(void)
                                                                                 withPredicate:[NSPredicate predicateWithFormat:@"sender.friendNumber == %d && messageFile.fileState == %d", friendNumber, OCTMessageFileStateInterrupted]];
         for (OCTMessageAbstract *msga in [get fetchObjects]) {
             if ([msga.messageFile.fileTag isEqualToData:tag]) {
-                BOOL yes = [self tryToResumeFile:msga withNewFileNumber:fileNumber kind:_OCTToxFileKindToFileUsage(kind) fileSize:fileSize fileName:fileName];
+                BOOL yes = [self tryToResumeFile:msga withNewFileNumber:fileNumber kind:OCTToxFileKindToFileUsage(kind) fileSize:fileSize fileName:fileName];
                 if (yes) {
                     return;
                 }
@@ -513,9 +513,9 @@ void _OCTExceptFileNotInbound(void)
         OCTMessageFile *newFileMessage = [[OCTMessageFile alloc] init];
         newFileMessage.fileNumber = fileNumber;
         newFileMessage.fileSize = fileSize;
-        newFileMessage.fileName = _OCTSanitizeFilename(fileName);
+        newFileMessage.fileName = OCTSanitizeFilename(fileName);
 
-        newFileMessage.fileUsage = _OCTToxFileKindToFileUsage(kind);
+        newFileMessage.fileUsage = OCTToxFileKindToFileUsage(kind);
 
 #ifdef OBJCTOX_SHOULD_BE_COMPATIBLE_WITH_UTOX_INLINE_IMAGES
         if ([fileName isEqualToString:@"utox-inline.png"]) {
@@ -539,7 +539,7 @@ void _OCTExceptFileNotInbound(void)
         newAbstractMessage.chat = c;
         newAbstractMessage.messageFile = newFileMessage;
 
-        [self setActiveFile:[self _createReceivingFileForMessage:newAbstractMessage] forFriendNumber:friendNumber fileNumber:fileNumber];
+        [self setActiveFile:[self createReceivingFileForMessage:newAbstractMessage] forFriendNumber:friendNumber fileNumber:fileNumber];
 
         [[self.dataSource managerGetRealmManager] addObject:newAbstractMessage];
         [[self.dataSource managerGetRealmManager] updateObject:c withBlock:^(OCTChat *theChat) {

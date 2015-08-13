@@ -31,11 +31,11 @@
 @property (strong)    OCTFileNotificationBlock notificationBlock;
 
 /* Helpful if a bit unclean. */
-- (id<OCTFileConduit>)_conduit;
+- (id<OCTFileConduit>)conduit;
 
-- (void)_sendProgressUpdateNow;
-- (void)_control:(OCTToxFileControl)ctl;
-- (void)_interrupt;
+- (void)sendProgressUpdateNow;
+- (void)control:(OCTToxFileControl)ctl;
+- (void)interrupt;
 
 @end
 
@@ -43,8 +43,8 @@
 
 @property (strong) id<OCTFileSending> sender;
 
-- (void)_completeFileTransferAndClose;
-- (void)_sendChunkForSize:(size_t)csize fromPosition:(OCTToxFileSize)p;
+- (void)completeFileTransferAndClose;
+- (void)sendChunkForSize:(size_t)csize fromPosition:(OCTToxFileSize)p;
 
 @end
 
@@ -52,7 +52,7 @@
 
 @property (strong) id<OCTFileReceiving> receiver;
 
-- (void)_completeFileTransferAndClose;
-- (void)_receiveChunkNow:(const uint8_t *)chunk length:(size_t)length atPosition:(OCTToxFileSize)p;
+- (void)completeFileTransferAndClose;
+- (void)receiveChunkNow:(const uint8_t *)chunk length:(size_t)length atPosition:(OCTToxFileSize)p;
 
 @end
