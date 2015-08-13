@@ -75,7 +75,7 @@
     [self performBlock:^{
         [expectation fulfill];
     } afterDelay:0.1];
-    [self waitForExpectationsWithTimeout:0.15 handler:nil];
+    [self waitForExpectationsWithTimeout:0.3 handler:nil];
 
     OCMVerify([self.tox bootstrapFromHost:@"one" port:1 publicKey:@"1" error:[OCMArg anyObjectRef]]);
     OCMVerify([self.tox bootstrapFromHost:@"two" port:2 publicKey:@"2" error:[OCMArg anyObjectRef]]);
@@ -106,7 +106,7 @@
     [self performBlock:^{
         [expectation fulfill];
     } afterDelay:0.5];
-    [self waitForExpectationsWithTimeout:0.6 handler:nil];
+    [self waitForExpectationsWithTimeout:1.2 handler:nil];
 
     OCMVerify([self.tox bootstrapFromHost:@"h1" port:1 publicKey:@"1" error:[OCMArg anyObjectRef]]);
     OCMVerify([self.tox bootstrapFromHost:@"h2" port:2 publicKey:@"2" error:[OCMArg anyObjectRef]]);
@@ -136,7 +136,7 @@
     [self performBlock:^{
         [expectation fulfill];
     } afterDelay:0.15];
-    [self waitForExpectationsWithTimeout:0.2 handler:nil];
+    [self waitForExpectationsWithTimeout:0.3 handler:nil];
 
     OCMVerify([self.tox bootstrapFromHost:@"one" port:1 publicKey:@"1" error:[OCMArg anyObjectRef]]);
 }

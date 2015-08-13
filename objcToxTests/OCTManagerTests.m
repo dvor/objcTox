@@ -53,6 +53,7 @@
 @interface OCTManagerTests : XCTestCase
 
 @property (strong, nonatomic) OCTManager *manager;
+@property (strong, nonatomic) id tox;
 
 @end
 
@@ -63,12 +64,21 @@
     [super setUp];
     // Put setup code here. This method is called before the invocation of each test method in the class.
 
-    OCTManagerConfiguration *configuration = [OCTManagerConfiguration defaultConfiguration];
-    self.manager = [[OCTManager alloc] initWithConfiguration:configuration error:nil];
+    self.tox = OCMClassMock([OCTTox class]);
+    OCMStub([self.tox alloc]).andReturn(self.tox);
+    OCMStub([self.tox initWithOptions:[OCMArg any] savedData:[OCMArg any] error:[OCMArg anyObjectRef]]).andReturn(self.tox);
+
+    id data = OCMClassMock([NSData class]);
+
+    OCMStub([data writeToFile:[OCMArg any] options:NSDataWritingAtomic error:[OCMArg anyObjectRef]]).andReturn(YES);
+    OCMStub([self.tox save]).andReturn(data);
 }
 
 - (void)tearDown
 {
+    [self.tox stopMocking];
+    self.tox = nil;
+
     self.manager = nil;
     // Put teardown code here. This method is called after the invocation of each test method in the class.
     [super tearDown];
@@ -76,6 +86,8 @@
 
 - (void)testInit
 {
+    [self createManager];
+
     XCTAssertNotNil(self.manager);
 
     XCTAssertNotNil(self.manager.avatars);
@@ -103,52 +115,42 @@
 {
     NSError *error, *error2;
 
-    id tox = OCMClassMock([OCTTox class]);
-    OCMStub([tox alloc]).andReturn(tox);
-    OCMStub([tox initWithOptions:[OCMArg any] savedData:[OCMArg any] error:[OCMArg anyObjectRef]]).andReturn(tox);
-    OCMExpect([tox bootstrapFromHost:@"host" port:10 publicKey:@"publicKey" error:[OCMArg setTo:error2]]).andReturn(YES);
+    OCMExpect([self.tox bootstrapFromHost:@"host" port:10 publicKey:@"publicKey" error:[OCMArg setTo:error2]]).andReturn(YES);
 
-    OCTManagerConfiguration *configuration = [OCTManagerConfiguration defaultConfiguration];
-    OCTManager *manager = [[OCTManager alloc] initWithConfiguration:configuration error:nil];
+    [self createManager];
 
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
-    BOOL result = [manager bootstrapFromHost:@"host" port:10 publicKey:@"publicKey" error:&error];
+    BOOL result = [self.manager bootstrapFromHost:@"host" port:10 publicKey:@"publicKey" error:&error];
 #pragma clang diagnostic pop
 
     XCTAssertTrue(result);
     XCTAssertEqual(error, error2);
-    OCMVerifyAll(tox);
-
-    tox = nil;
+    OCMVerifyAll(self.tox);
 }
 
 - (void)testAddTCPRelay
 {
     NSError *error, *error2;
 
-    id tox = OCMClassMock([OCTTox class]);
-    OCMStub([tox alloc]).andReturn(tox);
-    OCMStub([tox initWithOptions:[OCMArg any] savedData:[OCMArg any] error:[OCMArg anyObjectRef]]).andReturn(tox);
-    OCMExpect([tox addTCPRelayWithHost:@"host" port:10 publicKey:@"publicKey" error:[OCMArg setTo:error2]]).andReturn(YES);
+    OCMExpect([self.tox addTCPRelayWithHost:@"host" port:10 publicKey:@"publicKey" error:[OCMArg setTo:error2]]).andReturn(YES);
 
-    OCTManagerConfiguration *configuration = [OCTManagerConfiguration defaultConfiguration];
-    OCTManager *manager = [[OCTManager alloc] initWithConfiguration:configuration error:nil];
+    [self createManager];
 
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wdeprecated-declarations"
-    BOOL result = [manager addTCPRelayWithHost:@"host" port:10 publicKey:@"publicKey" error:&error];
+    BOOL result = [self.manager addTCPRelayWithHost:@"host" port:10 publicKey:@"publicKey" error:&error];
 #pragma clang diagnostic pop
 
     XCTAssertTrue(result);
     XCTAssertEqual(error, error2);
-    OCMVerifyAll(tox);
-
-    tox = nil;
+    OCMVerifyAll(self.tox);
 }
 
 - (void)testSubmanagerDataSource
 {
+    [self createManager];
+
     XCTAssertEqual([self.manager managerGetTox], self.manager.tox);
     XCTAssertEqual([self.manager managerGetRealmManager], self.manager.realmManager);
     XCTAssertEqual([self.manager managerGetSettingsStorage], self.manager.configuration.settingsStorage);
@@ -157,6 +159,8 @@
 
 - (void)testForwardTargetForSelector
 {
+    [self createManager];
+
     id submanager = [FakeSubmanager new];
     self.manager.avatars = submanager;
     self.manager.bootstrap = submanager;
@@ -178,6 +182,8 @@
 
 - (void)testForwardTargetForSelector2
 {
+    [self createManager];
+
     id submanager = [FakeSubmanager new];
     id dummy = [NSObject new];
 
@@ -250,6 +256,12 @@
     self.manager.user = submanager;
 
     XCTAssertEqual([self.manager forwardingTargetForSelector:@selector(tox:connectionStatus:)], submanager);
+}
+
+- (void)createManager
+{
+    OCTManagerConfiguration *configuration = [OCTManagerConfiguration defaultConfiguration];
+    self.manager = [[OCTManager alloc] initWithConfiguration:configuration error:nil];
 }
 
 @end

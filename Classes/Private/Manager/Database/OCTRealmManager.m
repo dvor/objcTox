@@ -21,6 +21,8 @@
 #undef LOG_LEVEL_DEF
 #define LOG_LEVEL_DEF LOG_LEVEL_VERBOSE
 
+static const uint64_t kCurrentSchemeVersion = 1;
+
 @interface OCTRealmManager ()
 
 @property (strong, nonatomic) dispatch_queue_t queue;
@@ -49,6 +51,7 @@
     __weak OCTRealmManager *weakSelf = self;
     dispatch_sync(_queue, ^{
         __strong OCTRealmManager *strongSelf = weakSelf;
+        [strongSelf performMigrationForRealmWithPath:path];
         strongSelf->_realm = [RLMRealm realmWithPath:path];
     });
 
@@ -266,6 +269,16 @@
 }
 
 #pragma mark -  Private
+
+- (void)performMigrationForRealmWithPath:(NSString *)path
+{
+    [RLMRealm setSchemaVersion:kCurrentSchemeVersion forRealmAtPath:path withMigrationBlock:
+     ^(RLMMigration *migration, uint64_t oldSchemaVersion) {
+        if (oldSchemaVersion < 1) {
+            // objcTox version 0.1.0
+        }
+    }];
+}
 
 - (RBQRealmChangeLogger *)logger
 {

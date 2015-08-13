@@ -232,9 +232,13 @@
         NSError *error;
 
         if (! [data writeToFile:savedDataPath options:NSDataWritingAtomic error:&error]) {
-            @throw [NSException exceptionWithName:@"saveToxException"
-                                           reason:error.debugDescription
-                                         userInfo:@{ @"NSError" : error }];
+            NSDictionary *userInfo = nil;
+
+            if (error) {
+                userInfo = @{ @"NSError" : error };
+            }
+
+            @throw [NSException exceptionWithName:@"saveToxException" reason:error.debugDescription userInfo:userInfo];
         }
     }
 }
