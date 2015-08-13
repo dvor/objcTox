@@ -99,7 +99,7 @@
 
 - (size_t)readBytes:(OCTToxFileSize)chunk_size intoBuffer:(nonnull uint8_t *)buffer
 {
-    size_t actual = read(self.readHandle.fileDescriptor, buffer, chunk_size);
+    size_t actual = read(self.readHandle.fileDescriptor, buffer, (size_t)chunk_size);
     return actual;
 }
 

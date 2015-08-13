@@ -139,7 +139,7 @@
 {
     // possible 32bit bug: we are forcibly truncating chunk_size.
     // The good news is, we're never going to encounter a chunk that big.
-    write(self._writeHandle.fileDescriptor, buffer, chunk_size);
+    write(self._writeHandle.fileDescriptor, buffer, (size_t)chunk_size);
     // [self._writeHandle writeData:[NSData dataWithBytesNoCopy:(uint8_t *)buffer length:(NSUInteger)chunk_size freeWhenDone:NO]];
 }
 
