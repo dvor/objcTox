@@ -75,6 +75,11 @@
     }
 
     _tox = [[OCTTox alloc] initWithOptions:configuration.options savedData:savedData error:nil];
+
+    if (! _tox) {
+        return nil;
+    }
+
     _tox.delegate = self;
     [_tox start];
 
@@ -88,33 +93,9 @@
     _bootstrap = [self createSubmanagerWithClass:[OCTSubmanagerBootstrap class]];
     _chats = [self createSubmanagerWithClass:[OCTSubmanagerChats class]];
     _files = [self createSubmanagerWithClass:[OCTSubmanagerFiles class]];
-    _files.queue = _tox.queue;
     _friends = [self createSubmanagerWithClass:[OCTSubmanagerFriends class]];
     _objects = [self createSubmanagerWithClass:[OCTSubmanagerObjects class]];
     _user = [self createSubmanagerWithClass:[OCTSubmanagerUser class]];
-
-    OCTSubmanagerFriends *friends = [OCTSubmanagerFriends new];
-    friends.dataSource = self;
-    [friends configure];
-    _friends = friends;
-
-    OCTSubmanagerChats *chats = [OCTSubmanagerChats new];
-    chats.dataSource = self;
-    _chats = chats;
-
-    OCTSubmanagerFiles *files = [OCTSubmanagerFiles new];
-    files.dataSource = self;
-    [files configure];
-    files.queue = self.tox.queue;
-    _files = files;
-
-    OCTSubmanagerAvatars *avatars = [OCTSubmanagerAvatars new];
-    avatars.dataSource = self;
-    _avatars = avatars;
-
-    OCTSubmanagerObjects *objects = [OCTSubmanagerObjects new];
-    objects.dataSource = self;
-    _objects = objects;
 
     _toxSaveFileLock = [NSObject new];
 

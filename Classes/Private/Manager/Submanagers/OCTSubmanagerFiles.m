@@ -119,6 +119,7 @@ void OCTExceptFileNotInbound(void)
 
 - (void)configure
 {
+    self.queue = [self.dataSource managerGetToxQueue];
     [[self.dataSource managerGetRealmManager] updateObjectsOfClass:[OCTMessageFile class] withoutNotificationUsingBlock:^(OCTMessageFile *theObject) {
         if ((theObject.fileState != OCTMessageFileStateCanceled)
             && (theObject.fileState != OCTMessageFileStateReady)) {
