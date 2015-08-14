@@ -28,7 +28,13 @@
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wshorten-64-to-32"
 
-static time_t OCTGetMonotonicTime(void)
+static const int kMillisecondsPerSecond = 1000;
+// in milliseconds
+static const int kProgressUpdateInterval = 100;
+static const int kSecondsToAverage = 10;
+
+/* returns milliseconds */
+static unsigned long OCTGetMonotonicTime(void)
 {
     clock_serv_t muhclock;
     mach_timespec_t machtime;
@@ -37,8 +43,22 @@ static time_t OCTGetMonotonicTime(void)
     clock_get_time(muhclock, &machtime);
     mach_port_deallocate(mach_task_self(), muhclock);
 
-    return machtime.tv_sec;
+    return (machtime.tv_sec * kMillisecondsPerSecond) + (machtime.tv_nsec / NSEC_PER_MSEC);
 }
+
+@interface OCTActiveFile ()
+
+@property (readwrite) OCTToxFileSize bytesMoved;
+@property (atomic)    BOOL isConduitOpen;
+
+@property (atomic)    unsigned long lastCountedTime;
+@property (atomic)    unsigned long lastProgressUpdateTime;
+@property (atomic)    OCTToxFileSize *transferRateCounters;
+@property (atomic)    long rollingIndex;
+
+@property (copy)      OCTFileNotificationBlock notificationBlock;
+
+@end
 
 @implementation OCTActiveFile
 
@@ -53,8 +73,8 @@ static time_t OCTGetMonotonicTime(void)
         return nil;
     }
 
-    self.transferRateCounters = calloc(sizeof(OCTToxFileSize), AVERAGE_SECONDS);
-    for (int i = 0; i < AVERAGE_SECONDS; ++i) {
+    self.transferRateCounters = malloc(sizeof(OCTToxFileSize) * kSecondsToAverage);
+    for (int i = 0; i < kSecondsToAverage; ++i) {
         self.transferRateCounters[i] = -1;
     }
 
@@ -73,7 +93,7 @@ static time_t OCTGetMonotonicTime(void)
 {
     @synchronized(self) {
         for (int i = 0; i < n; ++i) {
-            self.rollingIndex = (self.rollingIndex + 1) % AVERAGE_SECONDS;
+            self.rollingIndex = (self.rollingIndex + 1) % kSecondsToAverage;
             self.transferRateCounters[self.rollingIndex] = 0;
         }
     }
@@ -81,29 +101,39 @@ static time_t OCTGetMonotonicTime(void)
 
 - (void)countBytes:(NSUInteger)size
 {
-    time_t now = OCTGetMonotonicTime();
-    time_t delta = now - self.lastCountedTime;
+    unsigned long now = OCTGetMonotonicTime();
+    unsigned long avgdelta = now - self.lastCountedTime;
+    unsigned long progressdelta = now - self.lastProgressUpdateTime;
 
-    NSAssert(delta >= 0, @"Detected a temporal anomaly. objcTox currently does not support Tox FTL, nor phone-microwave-"
+    NSAssert(avgdelta >= 0, @"Detected a temporal anomaly. objcTox currently does not support Tox FTL, nor phone-microwave-"
              "based time travel. Please file a bug.");
 
-    if (delta != 0) {
-        [self incrementRollingIndex:delta];
+    if (avgdelta >= kMillisecondsPerSecond) {
+        [self incrementRollingIndex:avgdelta / kMillisecondsPerSecond];
+        self.lastCountedTime = now;
     }
 
-    self.lastCountedTime = now;
     self.bytesMoved += size;
     self.transferRateCounters[self.rollingIndex] += size;
+
+    if (progressdelta >= kProgressUpdateInterval) {
+        self.lastProgressUpdateTime = now;
+        dispatch_async(dispatch_get_main_queue(), ^{
+            [self sendProgressUpdateNow];
+        });
+    }
 }
 
 - (void)wipeCounters
 {
     @synchronized(self) {
-        for (int i = 0; i < AVERAGE_SECONDS; ++i) {
+        for (int i = 0; i < kSecondsToAverage; ++i) {
             self.transferRateCounters[i] = -1;
         }
-        self.lastCountedTime = OCTGetMonotonicTime();
     }
+    unsigned long t = OCTGetMonotonicTime();
+    self.lastCountedTime = t;
+    self.lastProgressUpdateTime = t;
 }
 
 #pragma mark - Private API
@@ -229,7 +259,7 @@ static time_t OCTGetMonotonicTime(void)
     OCTToxFileSize divisor = 0;
 
     @synchronized(self) {
-        for (int i = 0; i < AVERAGE_SECONDS; ++i) {
+        for (int i = 0; i < kSecondsToAverage; ++i) {
             if ((self.transferRateCounters[i] != -1) && (i != self.rollingIndex)) {
                 accumulator += self.transferRateCounters[i];
                 divisor++;
@@ -477,7 +507,7 @@ static time_t OCTGetMonotonicTime(void)
 
     [self.receiver writeBytes:length fromBuffer:chunk];
     [self countBytes:length];
-    [self.fileManager scheduleProgressNotificationForFile:self];
+    // [self.fileManager scheduleProgressNotificationForFile:self];
 }
 
 @end
@@ -521,7 +551,7 @@ static time_t OCTGetMonotonicTime(void)
     // DDLogDebug(@"_sendChunkForSize: %zu", actual);
     [[self.fileManager.dataSource managerGetTox] fileSendChunk:buf forFileNumber:self.fileMessage.fileNumber friendNumber:self.friendNumber position:p length:actual error:nil];
     [self countBytes:actual];
-    [self.fileManager scheduleProgressNotificationForFile:self];
+    // [self.fileManager scheduleProgressNotificationForFile:self];
 }
 
 @end

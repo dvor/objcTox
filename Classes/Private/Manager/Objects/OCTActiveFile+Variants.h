@@ -9,26 +9,16 @@
 #import "OCTSubmanagerFiles.h"
 #import "OCTActiveFile.h"
 
-#define AVERAGE_SECONDS 10
-
 @class OCTMessageFile;
 
 @interface OCTActiveFile ()
 
-@property (weak)      OCTSubmanagerFiles *fileManager;
+@property (weak, atomic)   OCTSubmanagerFiles *fileManager;
 // Observation: I'd rather not hold on to a Realm object. Who knows what could
 //              happen.
-@property (strong)    OCTMessageFile     *fileMessage;
-@property             OCTToxFriendNumber friendNumber;
-@property             OCTToxFileSize fileSize;
-@property (readwrite) OCTToxFileSize bytesMoved;
-@property             BOOL isConduitOpen;
-
-@property             time_t lastCountedTime;
-@property             OCTToxFileSize     *transferRateCounters;
-@property             long rollingIndex;
-
-@property (strong)    OCTFileNotificationBlock notificationBlock;
+@property (strong, atomic) OCTMessageFile     *fileMessage;
+@property (atomic)         OCTToxFriendNumber friendNumber;
+@property (atomic)         OCTToxFileSize fileSize;
 
 /* Helpful if a bit unclean. */
 - (id<OCTFileConduit>)conduit;
