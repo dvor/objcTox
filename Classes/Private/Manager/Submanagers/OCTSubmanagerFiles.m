@@ -89,6 +89,8 @@ void OCTExceptFileNotInbound(void)
 
 @interface OCTSubmanagerFiles ()
 
+@property (weak, atomic) dispatch_queue_t queue;
+
 @property (strong, atomic) NSMutableDictionary /* <NSNumber *, NSMutableDictionary<NSNumber *, OCTActiveFile *> *> */ *activeFiles;
 
 @property (strong, atomic) NSMutableSet /* <OCTActiveFile *> */ *pendingNotifications;
