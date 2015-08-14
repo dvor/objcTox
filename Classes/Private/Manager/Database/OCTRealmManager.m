@@ -303,7 +303,7 @@ static const uint64_t kCurrentSchemeVersion = 7;
 
 - (void)noteMessageFileChanged:(OCTMessageFile *)messageFile
 {
-    OCTMessageAbstract *abstractMessage = [messageFile linkingObjectsOfClass:[OCTMessageAbstract className] forProperty:@"messageFile"].firstObject;
+    OCTMessageAbstract *abstractMessage = [messageFile linkingObjectsOfClass:[OCTMessageAbstract className] forProperty:NSStringFromSelector(@selector(messageFile))].firstObject;
 
     if (abstractMessage) {
         [self updateObject:abstractMessage withBlock:^(OCTMessageAbstract *theObject) {
