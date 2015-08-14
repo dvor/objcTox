@@ -249,11 +249,6 @@
 
 #pragma mark - OCTToxDelegate
 
-- (void)toxDidIterate:(OCTTox *)tox
-{
-    [self.files sendProgressNotificationsNow];
-}
-
 - (void)tox:(OCTTox *)tox friendConnectionStatusChanged:(OCTToxConnectionStatus)status friendNumber:(OCTToxFriendNumber)friendNumber
 {
     // the rightful owner of this callback

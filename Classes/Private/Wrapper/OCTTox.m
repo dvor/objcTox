@@ -156,8 +156,6 @@ void (*_tox_self_get_public_key)(const Tox *tox, uint8_t *public_key);
         uint64_t interval = tox_iteration_interval(self.tox) * (NSEC_PER_SEC / 1000);
         dispatch_source_set_timer(self.timer, dispatch_walltime(NULL, 0), interval, interval / 5);
 
-        BOOL implementsDidIterate = [self.delegate respondsToSelector:@selector(toxDidIterate:)];
-
         __weak OCTTox *weakSelf = self;
         dispatch_source_set_event_handler(self.timer, ^{
             OCTTox *strongSelf = weakSelf;
@@ -166,13 +164,6 @@ void (*_tox_self_get_public_key)(const Tox *tox, uint8_t *public_key);
             }
 
             tox_iterate(strongSelf.tox);
-
-            if (implementsDidIterate) {
-                dispatch_async(dispatch_get_main_queue(), ^{
-                    [strongSelf.delegate toxDidIterate:strongSelf];
-                });
-            }
-
         });
 
         dispatch_resume(self.timer);

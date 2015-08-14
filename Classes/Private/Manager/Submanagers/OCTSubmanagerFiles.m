@@ -93,8 +93,6 @@ void OCTExceptFileNotInbound(void)
 
 @property (strong, atomic) NSMutableDictionary /* <NSNumber *, NSMutableDictionary<NSNumber *, OCTActiveFile *> *> */ *activeFiles;
 
-@property (strong, atomic) NSMutableSet /* <OCTActiveFile *> */ *pendingNotifications;
-
 @end
 
 @implementation OCTSubmanagerFiles
@@ -111,7 +109,6 @@ void OCTExceptFileNotInbound(void)
     }
 
     self.activeFiles = [[NSMutableDictionary alloc] init];
-    self.pendingNotifications = [[NSMutableSet alloc] init];
 
     return self;
 }
@@ -282,20 +279,8 @@ void OCTExceptFileNotInbound(void)
     return ret;
 }
 
-- (void)scheduleProgressNotificationForFile:(OCTActiveFile *)f
-{
-    [self.pendingNotifications addObject:f];
-}
-
-- (void)sendProgressNotificationsNow
-{
-    [self.pendingNotifications makeObjectsPerformSelector:@selector(sendProgressUpdateNow)];
-    [self.pendingNotifications removeAllObjects];
-}
-
 - (void)removeFile:(OCTActiveFile *)file
 {
-    [self.pendingNotifications removeObject:file];
     [self setActiveFile:nil forFriendNumber:file.friendNumber fileNumber:file.fileMessage.fileNumber];
 }
 
