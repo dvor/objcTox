@@ -8,6 +8,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 - Predefined list of nodes to bootstrap from https://wiki.tox.chat/users/nodes.
 
 ### Changes
+- `toxcore-ios` replaced with `toxcore` pod.
 - OCTSubmanagerFriends: removed return `BOOL` value from `removeFriendRequest:` method.
 
 ### Fixed
