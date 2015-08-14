@@ -28,7 +28,7 @@
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wshorten-64-to-32"
 
-static time_t OCTGetSystemUptime(void)
+static time_t OCTGetMonotonicTime(void)
 {
     clock_serv_t muhclock;
     mach_timespec_t machtime;
@@ -81,11 +81,8 @@ static time_t OCTGetSystemUptime(void)
 
 - (void)countBytes:(NSUInteger)size
 {
-    self.bytesMoved += size;
-
-    time_t now = OCTGetSystemUptime();
+    time_t now = OCTGetMonotonicTime();
     time_t delta = now - self.lastCountedTime;
-    self.lastCountedTime = now;
 
     NSAssert(delta >= 0, @"Detected a temporal anomaly. objcTox currently does not support Tox FTL, nor phone-microwave-"
              "based time travel. Please file a bug.");
@@ -94,6 +91,8 @@ static time_t OCTGetSystemUptime(void)
         [self incrementRollingIndex:delta];
     }
 
+    self.lastCountedTime = now;
+    self.bytesMoved += size;
     self.transferRateCounters[self.rollingIndex] += size;
 }
 
@@ -103,7 +102,7 @@ static time_t OCTGetSystemUptime(void)
         for (int i = 0; i < AVERAGE_SECONDS; ++i) {
             self.transferRateCounters[i] = -1;
         }
-        self.lastCountedTime = OCTGetSystemUptime();
+        self.lastCountedTime = OCTGetMonotonicTime();
     }
 }
 
