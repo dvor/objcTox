@@ -11,10 +11,7 @@
 
 @interface OCTSubmanagerFiles (Private) <OCTSubmanagerProtocol>
 
-@property (weak, nonatomic) id<OCTSubmanagerDataSource> dataSource;
-@property (weak) dispatch_queue_t queue;
-
-- (void)configure;
+@property (weak, atomic) dispatch_queue_t queue;
 
 - (void)sendProgressNotificationsNow;
 - (void)scheduleProgressNotificationForFile:(OCTActiveFile *)f;
