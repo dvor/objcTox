@@ -421,6 +421,8 @@ OCTToxAVPlaneData *aPlanePointer = aPlaneTestData;
     const OCTToxAVPlaneData vPlane[] = {1, 2, 5, 4, 5};
     const OCTToxAVPlaneData *vPointer = vPlane;
 
+    self.toxAV.videoProcessingQueue = dispatch_get_main_queue();
+
     [self makeTestCallbackWithCallBlock:^{
         receiveVideoFrameCallback(NULL, 123,
                                   999, 888,

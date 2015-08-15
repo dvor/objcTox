@@ -46,6 +46,7 @@ toxav_video_receive_frame_cb receiveVideoFrameCallback;
 @interface OCTToxAV (Private)
 
 @property (assign, nonatomic) ToxAV *toxAV;
+@property (strong, nonatomic) dispatch_queue_t videoProcessingQueue;
 
 - (BOOL)fillError:(NSError **)error withCErrorInit:(TOXAV_ERR_NEW)cError;
 - (BOOL)fillError:(NSError **)error withCErrorCall:(TOXAV_ERR_CALL)cError;
