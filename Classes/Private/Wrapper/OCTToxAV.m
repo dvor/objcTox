@@ -33,12 +33,12 @@ bool (*_toxav_video_bit_rate_set)(ToxAV *toxAV, uint32_t friend_number, uint32_t
 bool (*_toxav_audio_send_frame)(ToxAV *toxAV, uint32_t friend_number, const int16_t *pcm, size_t sample_count, uint8_t channels, uint32_t sampling_rate, TOXAV_ERR_SEND_FRAME *error);
 bool (*_toxav_video_send_frame)(ToxAV *toxAV, uint32_t friend_number, uint16_t width, uint16_t height, const uint8_t *y, const uint8_t *u, const uint8_t *v, TOXAV_ERR_SEND_FRAME *error);
 
-
 @interface OCTToxAV ()
 
 @property (assign, nonatomic) ToxAV *toxAV;
 
 @property (strong, nonatomic) dispatch_source_t timer;
+@property (strong, nonatomic) dispatch_queue_t videoProcessingQueue;
 
 @end
 
@@ -91,6 +91,8 @@ bool (*_toxav_video_send_frame)(ToxAV *toxAV, uint32_t friend_number, uint16_t w
     [self fillError:error withCErrorInit:cError];
 
     [self setupCallbacks];
+
+    self.videoProcessingQueue = dispatch_queue_create("me.dvor.objcTox.OCTToxAVVideoQueue", DISPATCH_QUEUE_SERIAL);
 
     return self;
 }
@@ -151,6 +153,7 @@ bool (*_toxav_video_send_frame)(ToxAV *toxAV, uint32_t friend_number, uint16_t w
 {
     [self stop];
     _toxav_kill(self.toxAV);
+
     DDLogVerbose(@"%@: dealloc called, toxav killed", self);
 }
 
@@ -655,7 +658,7 @@ void receiveVideoFrameCallback(ToxAV *cToxAV,
 {
     OCTToxAV *toxAV = (__bridge OCTToxAV *)userData;
 
-    dispatch_async(dispatch_get_main_queue(), ^{
+    dispatch_async(toxAV.videoProcessingQueue, ^{
         if ([toxAV.delegate respondsToSelector:@selector(toxAV:receiveVideoFrameWithWidth:height:yPlane:uPlane:vPlane:yStride:uStride:vStride:friendNumber:)]) {
             [toxAV.delegate toxAV:toxAV
              receiveVideoFrameWithWidth:width height:height
