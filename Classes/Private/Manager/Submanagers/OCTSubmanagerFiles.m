@@ -170,7 +170,7 @@ void OCTExceptFileNotInbound(void)
     newAbstractMessage.chat = chat;
     newAbstractMessage.messageFile = newFileMessage;
 
-    OCTActiveOutboundFile *send = [self createSendingFileForFriend:f message:newFileMessage provider:file];
+    OCTActiveOutgoingFile *send = [self createSendingFileForFriend:f message:newFileMessage provider:file];
     [self setActiveFile:send forFriendNumber:f.friendNumber fileNumber:n];
     self.activeFiles[@(f.friendNumber)][@(n)] = send;
 
@@ -205,8 +205,8 @@ void OCTExceptFileNotInbound(void)
         return nil;
     }
 
-    OCTActiveInboundFile *f = (OCTActiveInboundFile *)[self realActiveFileForMessage:msg];
-    if (! [f isKindOfClass:[OCTActiveInboundFile class]]) {
+    OCTActiveIncomingFile *f = (OCTActiveIncomingFile *)[self realActiveFileForMessage:msg];
+    if (! [f isKindOfClass:[OCTActiveIncomingFile class]]) {
         OCTExceptFileNotInbound();
         return nil;
     }
@@ -304,9 +304,9 @@ void OCTExceptFileNotInbound(void)
     return self.activeFiles[@(fn)][@(file)];
 }
 
-- (nonnull OCTActiveOutboundFile *)createSendingFileForFriend:(OCTFriend *)f message:(OCTMessageFile *)msg provider:(id<OCTFileSending>)prov
+- (nonnull OCTActiveOutgoingFile *)createSendingFileForFriend:(OCTFriend *)f message:(OCTMessageFile *)msg provider:(id<OCTFileSending>)prov
 {
-    OCTActiveOutboundFile *ret = [[OCTActiveOutboundFile alloc] init];
+    OCTActiveOutgoingFile *ret = [[OCTActiveOutgoingFile alloc] init];
     ret.fileManager = self;
     ret.fileIdentifier = msg.uniqueIdentifier;
     ret.fileNumber = msg.fileNumber;
@@ -316,9 +316,9 @@ void OCTExceptFileNotInbound(void)
     return ret;
 }
 
-- (nonnull OCTActiveInboundFile *)createReceivingFileForMessage:(OCTMessageAbstract *)f
+- (nonnull OCTActiveIncomingFile *)createReceivingFileForMessage:(OCTMessageAbstract *)f
 {
-    OCTActiveInboundFile *ret = [[OCTActiveInboundFile alloc] init];
+    OCTActiveIncomingFile *ret = [[OCTActiveIncomingFile alloc] init];
     ret.fileManager = self;
     ret.fileIdentifier = f.messageFile.uniqueIdentifier;
     ret.fileNumber = f.messageFile.fileNumber;
@@ -378,7 +378,7 @@ void OCTExceptFileNotInbound(void)
         msga_.messageFile.pauseFlags = OCTPauseFlagsFriend;
     }];
 
-    OCTActiveOutboundFile *outf = [self createSendingFileForFriend:f message:msga.messageFile provider:sender];
+    OCTActiveOutgoingFile *outf = [self createSendingFileForFriend:f message:msga.messageFile provider:sender];
     [self setActiveFile:outf forFriendNumber:outf.friendNumber fileNumber:n];
     return YES;
 }
@@ -430,7 +430,7 @@ void OCTExceptFileNotInbound(void)
         msga_.messageFile.pauseFlags = OCTPauseFlagsSelf;
     }];
 
-    OCTActiveInboundFile *inf = [self createReceivingFileForMessage:msga];
+    OCTActiveIncomingFile *inf = [self createReceivingFileForMessage:msga];
     inf.receiver = rcvr;
     [self setActiveFile:inf forFriendNumber:msga.sender.friendNumber fileNumber:fileNumber];
     return YES;
@@ -467,9 +467,9 @@ void OCTExceptFileNotInbound(void)
         position:(OCTToxFileSize)position
           length:(size_t)length
 {
-    OCTActiveOutboundFile *outboundFile = (OCTActiveOutboundFile *)[self activeFileForFriendNumber:friendNumber fileNumber:fileNumber];
+    OCTActiveOutgoingFile *outboundFile = (OCTActiveOutgoingFile *)[self activeFileForFriendNumber:friendNumber fileNumber:fileNumber];
 
-    NSAssert([outboundFile isMemberOfClass:[OCTActiveOutboundFile class]],
+    NSAssert([outboundFile isMemberOfClass:[OCTActiveOutgoingFile class]],
              @"Chunk requested for a bad file %@!", outboundFile);
 
     if (length == 0) {
@@ -487,9 +487,9 @@ void OCTExceptFileNotInbound(void)
     friendNumber:(OCTToxFriendNumber)friendNumber
         position:(OCTToxFileSize)position
 {
-    OCTActiveInboundFile *inboundFile = (OCTActiveInboundFile *)[self activeFileForFriendNumber:friendNumber fileNumber:fileNumber];
+    OCTActiveIncomingFile *inboundFile = (OCTActiveIncomingFile *)[self activeFileForFriendNumber:friendNumber fileNumber:fileNumber];
 
-    NSAssert([inboundFile isMemberOfClass:[OCTActiveInboundFile class]], @"Received a chunk for a bad file %@!", inboundFile);
+    NSAssert([inboundFile isMemberOfClass:[OCTActiveIncomingFile class]], @"Received a chunk for a bad file %@!", inboundFile);
 
     if (length == 0) {
         [inboundFile completeFileTransferAndClose];

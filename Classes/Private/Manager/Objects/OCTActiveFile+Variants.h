@@ -26,7 +26,7 @@
 
 @end
 
-@interface OCTActiveOutboundFile : OCTActiveFile
+@interface OCTActiveOutgoingFile : OCTActiveFile
 
 @property (strong, atomic) id<OCTFileSending> sender;
 
@@ -35,7 +35,7 @@
 
 @end
 
-@interface OCTActiveInboundFile : OCTActiveFile
+@interface OCTActiveIncomingFile : OCTActiveFile
 
 @property (strong, atomic) id<OCTFileReceiving> receiver;
 

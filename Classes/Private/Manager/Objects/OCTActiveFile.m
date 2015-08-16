@@ -423,7 +423,7 @@ static void OCTSetFileError(NSError **errorptr, NSInteger code, NSString *descri
 
 @end
 
-@implementation OCTActiveInboundFile
+@implementation OCTActiveIncomingFile
 
 - (id<OCTFileConduit>)conduit
 {
@@ -459,7 +459,7 @@ static void OCTSetFileError(NSError **errorptr, NSInteger code, NSString *descri
 
 @end
 
-@implementation OCTActiveOutboundFile
+@implementation OCTActiveOutgoingFile
 
 - (id<OCTFileConduit>)conduit
 {
