@@ -22,12 +22,12 @@ typedef void (^OCTFileNotificationBlock)(OCTActiveFile *__nonnull);
  * How many bytes have been downloaded/uploaded so far.
  * Used in calculations for @progress and @estimatedTimeRemaining.
  */
-@property (readonly) OCTToxFileSize bytesMoved;
+@property (atomic, readonly) OCTToxFileSize bytesMoved;
 
 /**
  * How much of transfer has been completed, on a scale from 0.0 to 1.0.
  */
-@property (readonly) double progress;
+@property (atomic, readonly) double progress;
 
 /**
  * The seconds it would take to finish the download.
@@ -35,12 +35,12 @@ typedef void (^OCTFileNotificationBlock)(OCTActiveFile *__nonnull);
  * over the last ten seconds.
  * -1 means an indefinite amount of time.
  */
-@property (readonly) NSTimeInterval estimatedTimeRemaining;
+@property (atomic, readonly) NSTimeInterval estimatedTimeRemaining;
 
 /**
  * Current speed of the file transfer.
  */
-@property (readonly) OCTToxFileSize bytesPerSecond;
+@property (nonatomic, readonly) OCTToxFileSize bytesPerSecond;
 
 - (BOOL)pauseWithError:(NSError *__nullable *__nullable)error;
 - (BOOL)resumeWithError:(NSError *__nullable *__nullable)error;
