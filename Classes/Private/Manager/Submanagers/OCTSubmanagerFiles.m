@@ -205,7 +205,7 @@ void OCTExceptFileNotInbound(void)
         return nil;
     }
 
-    OCTActiveInboundFile *f = (OCTActiveInboundFile *)[self activeFileForMessage:msg];
+    OCTActiveInboundFile *f = (OCTActiveInboundFile *)[self realActiveFileForMessage:msg];
     if (! [f isKindOfClass:[OCTActiveInboundFile class]]) {
         OCTExceptFileNotInbound();
         return nil;
@@ -220,6 +220,16 @@ void OCTExceptFileNotInbound(void)
 {
     NSParameterAssert(file);
 
+    if (file.messageFile.fileState == OCTMessageFileStateWaitingConfirmation) {
+        DDLogWarn(@"warning: activeFileForMessage: is useless when the file's state is WaitingConfirmation. Returning nil");
+        return nil;
+    }
+
+    return [self realActiveFileForMessage:file];
+}
+
+- (nullable OCTActiveFile *)realActiveFileForMessage:(OCTMessageAbstract *)file
+{
     if (file.sender) {
         return [self activeFileForFriendNumber:file.sender.friendNumber fileNumber:file.messageFile.fileNumber];
     }
