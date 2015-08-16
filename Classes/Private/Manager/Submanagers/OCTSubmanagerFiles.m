@@ -157,8 +157,8 @@ void OCTExceptFileNotInbound(void)
     newFileMessage.fileSize = file.fileSize;
     newFileMessage.fileName = name;
     newFileMessage.fileUsage = type;
-    newFileMessage.fileState = OCTMessageFileStatePaused;
-    newFileMessage.pauseFlags = OCTPauseFlagsOther;
+    newFileMessage.fileState = OCTMessageFileStateWaitingConfirmation;
+    newFileMessage.pauseFlags = OCTPauseFlagsFriend;
     newFileMessage.filePath = @"";
     newFileMessage.filePosition = 0;
     newFileMessage.restorationTag = [NSData data];
@@ -237,6 +237,42 @@ void OCTExceptFileNotInbound(void)
 
 #pragma mark - Private
 
+- (void)  setState:(OCTMessageFileState)state
+           forFile:(OCTActiveFile *)file
+    cleanInternals:(BOOL)clean
+       andRunBlock:(void (^)(OCTMessageFile *theObject))extraBlock
+{
+    OCTMessageFile *mf = (OCTMessageFile *)[[self.dataSource managerGetRealmManager]
+                                            objectWithUniqueIdentifier:file.fileIdentifier class:[OCTMessageFile class]];
+    [[self.dataSource managerGetRealmManager] updateObject:mf withBlock:^(OCTMessageFile *theObject) {
+        theObject.fileState = state;
+
+        if (clean) {
+            theObject.filePosition = 0;
+            theObject.restorationTag = nil;
+            theObject.fileTag = nil;
+            theObject.filePath = nil;
+        }
+
+        if (extraBlock) {
+            extraBlock(theObject);
+        }
+    }];
+    [[self.dataSource managerGetRealmManager] noteMessageFileChanged:mf];
+}
+
+- (void)setState:(OCTMessageFileState)state andArchiveConduitForFile:(OCTActiveFile *)file withPauseFlags:(OCTPauseFlags)flag
+{
+    NSData *conduitData = [file archiveConduit];
+    OCTToxFileSize bytesMoved = file.bytesMoved;
+
+    [self setState:state forFile:file cleanInternals:NO andRunBlock:^(OCTMessageFile *theObject) {
+        theObject.pauseFlags = flag;
+        theObject.filePosition = bytesMoved;
+        theObject.restorationTag = conduitData;
+    }];
+}
+
 - (void)setActiveFile:(nullable OCTActiveFile *)file forFriendNumber:(OCTToxFriendNumber)fn fileNumber:(OCTToxFileNumber)filen
 {
     NSMutableDictionary *d = self.activeFiles[@(fn)];
@@ -262,7 +298,8 @@ void OCTExceptFileNotInbound(void)
 {
     OCTActiveOutboundFile *ret = [[OCTActiveOutboundFile alloc] init];
     ret.fileManager = self;
-    ret.fileMessage = msg;
+    ret.fileIdentifier = msg.uniqueIdentifier;
+    ret.fileNumber = msg.fileNumber;
     ret.friendNumber = f.friendNumber;
     ret.fileSize = prov.fileSize;
     ret.sender = prov;
@@ -273,7 +310,8 @@ void OCTExceptFileNotInbound(void)
 {
     OCTActiveInboundFile *ret = [[OCTActiveInboundFile alloc] init];
     ret.fileManager = self;
-    ret.fileMessage = f.messageFile;
+    ret.fileIdentifier = f.messageFile.uniqueIdentifier;
+    ret.fileNumber = f.messageFile.fileNumber;
     ret.friendNumber = f.sender.friendNumber;
     ret.fileSize = f.messageFile.fileSize;
     return ret;
@@ -281,7 +319,7 @@ void OCTExceptFileNotInbound(void)
 
 - (void)removeFile:(OCTActiveFile *)file
 {
-    [self setActiveFile:nil forFriendNumber:file.friendNumber fileNumber:file.fileMessage.fileNumber];
+    [self setActiveFile:nil forFriendNumber:file.friendNumber fileNumber:file.fileNumber];
 }
 
 /* Sending file */
@@ -327,7 +365,7 @@ void OCTExceptFileNotInbound(void)
     [[self.dataSource managerGetRealmManager] updateObject:msga withBlock:^(OCTMessageAbstract *msga_) {
         msga_.dateInterval = [NSDate date].timeIntervalSince1970;
         msga_.messageFile.fileNumber = n;
-        msga_.messageFile.pauseFlags = OCTPauseFlagsOther;
+        msga_.messageFile.pauseFlags = OCTPauseFlagsFriend;
     }];
 
     OCTActiveOutboundFile *outf = [self createSendingFileForFriend:f message:msga.messageFile provider:sender];
@@ -353,6 +391,7 @@ void OCTExceptFileNotInbound(void)
         DDLogWarn(@"OCTSubmanagerFiles WARNING: while trying to resume incoming file %@, I decoded a nil conduit.", msga);
         return NO;
     }
+
     if (! [rcvr conformsToProtocol:@protocol(OCTFileReceiving)]) {
         DDLogWarn(@"OCTSubmanagerFiles WARNING: while trying to resume incoming file %@, I decoded a conduit (%@) that did not conform to OCTFileReceiving.", msga, rcvr);
         return NO;
@@ -512,6 +551,7 @@ void OCTExceptFileNotInbound(void)
 #endif
 
         newFileMessage.fileState = OCTMessageFileStateWaitingConfirmation;
+        newFileMessage.pauseFlags = OCTPauseFlagsSelf;
         newFileMessage.filePath = @"";
         newFileMessage.filePosition = 0;
         newFileMessage.fileTag = tag;

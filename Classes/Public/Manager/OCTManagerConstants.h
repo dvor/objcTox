@@ -15,9 +15,9 @@ typedef NS_ENUM(NSUInteger, OCTFetchRequestType) {
 
 typedef NS_ENUM(NSInteger, OCTMessageFileState) {
     /**
-     * File is incoming and is waiting confirmation of user to be downloaded.
-     * Please start loading or cancel it with -OCTSubmanagerFiles saveFile:....
-     * Resumable.
+     * The file is waiting for either you or your friend to accept it.
+     * This is similar to the Paused state, so check the pauseFlags to figure
+     * out who you are waiting for.
      */
     OCTMessageFileStateWaitingConfirmation,
 
@@ -49,7 +49,6 @@ typedef NS_ENUM(NSInteger, OCTMessageFileState) {
     /**
      * File was interrupted, possibly by the friend going offline,
      * we crashed, etc.
-     * Pass OCTMessageAbstract to [placeholder] to resume.
      */
     OCTMessageFileStateInterrupted
 };
@@ -80,9 +79,18 @@ typedef NS_ENUM(NSInteger, OCTFileUsage) {
 /* note: signed type is being used because of Realm. */
 typedef NS_OPTIONS(NSInteger, OCTPauseFlags) {
     OCTPauseFlagsSelf = 1,
-    OCTPauseFlagsOther = 1 << 1,
+    OCTPauseFlagsFriend = 1 << 1,
 
         /* These are for convenience. */
         OCTPauseFlagsNobody = 0,
-        OCTPauseFlagsBoth = 3,
+        OCTPauseFlagsBoth = OCTPauseFlagsSelf | OCTPauseFlagsFriend,
+};
+
+extern NSString *__nonnull const kOCTFileErrorDomain;
+
+typedef NS_ENUM(NSInteger, OCTFileErrorCode) {
+    /**
+     * The file conduit could not be opened.
+     */
+    OCTFileErrorCodeBadConduit,
 };

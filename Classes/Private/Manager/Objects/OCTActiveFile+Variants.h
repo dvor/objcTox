@@ -14,16 +14,13 @@
 @interface OCTActiveFile ()
 
 @property (weak, atomic)   OCTSubmanagerFiles *fileManager;
-// Observation: I'd rather not hold on to a Realm object. Who knows what could
-//              happen.
-@property (strong, atomic) OCTMessageFile     *fileMessage;
+// Realm identifier
+@property (copy, atomic)   NSString           *fileIdentifier;
 @property (atomic)         OCTToxFriendNumber friendNumber;
+@property (atomic)         OCTToxFileNumber fileNumber;
 @property (atomic)         OCTToxFileSize fileSize;
 
-/* Helpful if a bit unclean. */
-- (id<OCTFileConduit>)conduit;
-
-- (void)sendProgressUpdateNow;
+- (NSData *)archiveConduit;
 - (void)control:(OCTToxFileControl)ctl;
 - (void)interrupt;
 
@@ -31,7 +28,7 @@
 
 @interface OCTActiveOutboundFile : OCTActiveFile
 
-@property (strong) id<OCTFileSending> sender;
+@property (strong, atomic) id<OCTFileSending> sender;
 
 - (void)completeFileTransferAndClose;
 - (void)sendChunkForSize:(size_t)csize fromPosition:(OCTToxFileSize)p;
@@ -40,7 +37,7 @@
 
 @interface OCTActiveInboundFile : OCTActiveFile
 
-@property (strong) id<OCTFileReceiving> receiver;
+@property (strong, atomic) id<OCTFileReceiving> receiver;
 
 - (void)completeFileTransferAndClose;
 - (void)receiveChunkNow:(const uint8_t *)chunk length:(size_t)length atPosition:(OCTToxFileSize)p;
