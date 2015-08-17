@@ -168,7 +168,6 @@ void OCTExceptFileNotInbound(void)
 
     OCTActiveOutgoingFile *send = (OCTActiveOutgoingFile *)[self createActiveFileForFriend:f message:fmsg provider:file isOutgoing:YES];
     [self setActiveFile:send forFriendNumber:f.friendNumber fileNumber:n];
-    self.activeFiles[@(f.friendNumber)][@(n)] = send;
 
     [[self.dataSource managerGetRealmManager] addObject:msg];
     [[self.dataSource managerGetRealmManager] updateObject:chat withBlock:^(OCTChat *theChat) {
@@ -180,7 +179,6 @@ void OCTExceptFileNotInbound(void)
         *msgout = msg;
     }
 
-    // [send resumeWithError:error];
     return send;
 }
 
