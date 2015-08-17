@@ -17,6 +17,11 @@
 @property (weak, nonatomic) id<OCTToxDelegate> delegate;
 
 /**
+ * A GCD queue that can be used to run synchronously with the Tox loop.
+ */
+@property (strong, atomic) dispatch_queue_t queue;
+
+/**
  * Indicates if we are connected to the DHT.
  */
 @property (assign, nonatomic, readonly) OCTToxConnectionStatus connectionStatus;
@@ -508,7 +513,7 @@
 - (OCTToxFileNumber)fileSendWithFriendNumber:(OCTToxFriendNumber)friendNumber
                                         kind:(OCTToxFileKind)kind
                                     fileSize:(OCTToxFileSize)fileSize
-                                      fileId:(NSString *)fileId
+                                      fileId:(NSData *)fileId
                                     fileName:(NSString *)fileName
                                        error:(NSError **)error;
 
@@ -523,19 +528,21 @@
  * chunk to terminate. For streams, core will know that the transfer is finished
  * if a chunk with length less than the length requested in the callback is sent.
  *
+ * @param data The buffer to send. When it is null, the transfer is complete.
  * @param friendNumber The friend number of the receiving friend for this file.
  * @param fileNumber The file transfer identifier returned by fileSend.
  * @param position The file or stream position from which to continue reading.
- * @param data Data of chunk to send. May be nil, then transfer is assumed complete.
+ * @param length The length of `data` parameter.
  * @param error If an error occurs, this pointer is set to an actual error object containing the error information.
  * See OCTToxErrorFileSendChunk for all error codes.
  *
  * @return YES on success, NO on failure.
  */
-- (BOOL)fileSendChunkForFileNumber:(OCTToxFileNumber)fileNumber
-                      friendNumber:(OCTToxFriendNumber)friendNumber
-                          position:(OCTToxFileSize)position
-                              data:(NSData *)data
-                             error:(NSError **)error;
+- (BOOL)fileSendChunk:(const uint8_t *)data
+        forFileNumber:(OCTToxFileNumber)fileNumber
+         friendNumber:(OCTToxFriendNumber)friendNumber
+             position:(OCTToxFileSize)position
+               length:(size_t)length
+                error:(NSError **)error;
 
 @end

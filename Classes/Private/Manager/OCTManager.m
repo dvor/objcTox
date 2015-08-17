@@ -156,6 +156,11 @@
     return self.configuration.fileStorage;
 }
 
+- (dispatch_queue_t)managerGetToxQueue
+{
+    return self.tox.queue;
+}
+
 #pragma mark -  Private
 
 - (void)validateConfiguration:(OCTManagerConfiguration *)configuration
@@ -185,13 +190,12 @@
 
 - (BOOL)respondsToSelector:(SEL)aSelector
 {
-    id submanager = [self forwardingTargetForSelector:aSelector];
-
-    if (submanager) {
+    if ([super respondsToSelector:aSelector] || [self forwardingTargetForSelector:aSelector]) {
         return YES;
     }
-
-    return [super respondsToSelector:aSelector];
+    else {
+        return NO;
+    }
 }
 
 - (id)forwardingTargetForSelector:(SEL)aSelector
@@ -241,6 +245,16 @@
             @throw [NSException exceptionWithName:@"saveToxException" reason:error.debugDescription userInfo:userInfo];
         }
     }
+}
+
+#pragma mark - OCTToxDelegate
+
+- (void)tox:(OCTTox *)tox friendConnectionStatusChanged:(OCTToxConnectionStatus)status friendNumber:(OCTToxFriendNumber)friendNumber
+{
+    // the rightful owner of this callback
+    [self.friends tox:tox friendConnectionStatusChanged:status friendNumber:friendNumber];
+    // needed for file resuming machinery
+    [self.files tox:tox friendConnectionStatusChanged:status friendNumber:friendNumber];
 }
 
 #pragma mark -  Deprecated

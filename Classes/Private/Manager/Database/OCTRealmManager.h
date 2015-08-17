@@ -47,6 +47,18 @@
  */
 - (void)updateObjectsWithoutNotification:(void (^)())updateBlock;
 
+/**
+ * Map `updateBlock` over all realm objects of the `cls`.
+ */
+- (void)updateObjectsOfClass:(Class)cls withBlock:(void (^)(id theObject))updateBlock;
+
+/**
+ * Map `updateBlock` over all realm objects of the `cls` without sending RBQ update notifications.
+ * The note on -updateObjectsWithoutNotification: applies here too.
+ */
+- (void)updateObjectsOfClass:(Class)cls withoutNotificationUsingBlock:(void (^)(id theObject))updateBlock;
+
+
 #pragma mark -  Other methods
 
 - (OCTFriend *)friendWithFriendNumber:(OCTToxFriendNumber)friendNumber;
@@ -58,5 +70,9 @@
                                       chat:(OCTChat *)chat
                                     sender:(OCTFriend *)sender
                                  messageId:(OCTToxMessageId)messageId;
+
+/* Record a change to the OCTMessageAbstract containing the messageFile.
+ * (Clients would otherwise not be notified of file transfer state changes) */
+- (void)noteMessageFileChanged:(OCTMessageFile *)messageFile;
 
 @end

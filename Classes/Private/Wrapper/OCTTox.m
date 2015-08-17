@@ -150,8 +150,8 @@ void (*_tox_self_get_public_key)(const Tox *tox, uint8_t *public_key);
             return;
         }
 
-        dispatch_queue_t queue = dispatch_queue_create("me.dvor.objcTox.OCTToxQueue", NULL);
-        self.timer = dispatch_source_create(DISPATCH_SOURCE_TYPE_TIMER, 0, 0, queue);
+        self.queue = dispatch_queue_create("me.dvor.objcTox.OCTToxQueue", NULL);
+        self.timer = dispatch_source_create(DISPATCH_SOURCE_TYPE_TIMER, 0, 0, self.queue);
 
         uint64_t interval = tox_iteration_interval(self.tox) * (NSEC_PER_SEC / 1000);
         dispatch_source_set_timer(self.timer, dispatch_walltime(NULL, 0), interval, interval / 5);
@@ -766,10 +766,9 @@ void (*_tox_self_get_public_key)(const Tox *tox, uint8_t *public_key);
     [self fillError:error withCErrorFileGet:cError];
 
     if (result) {
-        fileId = [NSData dataWithBytes:cFileId length:kOCTToxFileIdLength];
+        fileId = [NSData dataWithBytesNoCopy:cFileId length:kOCTToxFileIdLength freeWhenDone:YES];
     }
-
-    if (cFileId) {
+    else {
         free(cFileId);
     }
 
@@ -779,7 +778,7 @@ void (*_tox_self_get_public_key)(const Tox *tox, uint8_t *public_key);
 - (OCTToxFileNumber)fileSendWithFriendNumber:(OCTToxFriendNumber)friendNumber
                                         kind:(OCTToxFileKind)kind
                                     fileSize:(OCTToxFileSize)fileSize
-                                      fileId:(NSString *)fileId
+                                      fileId:(NSData *)fileId
                                     fileName:(NSString *)fileName
                                        error:(NSError **)error
 {
@@ -797,8 +796,11 @@ void (*_tox_self_get_public_key)(const Tox *tox, uint8_t *public_key);
             break;
     }
 
-    if (fileId.length) {
-        cFileId = (const uint8_t *)[fileId cStringUsingEncoding:NSUTF8StringEncoding];
+    if (fileId.length == kOCTToxFileIdLength) {
+        cFileId = fileId.bytes;
+    }
+    else if (fileId) {
+        DDLogWarn(@"warning: fileId length must be kOCTToxFileIdLength bytes (you sent %lu)", (unsigned long)fileId.length);
     }
 
     if (fileName.length) {
@@ -812,16 +814,16 @@ void (*_tox_self_get_public_key)(const Tox *tox, uint8_t *public_key);
     return result;
 }
 
-- (BOOL)fileSendChunkForFileNumber:(OCTToxFileNumber)fileNumber
-                      friendNumber:(OCTToxFriendNumber)friendNumber
-                          position:(OCTToxFileSize)position
-                              data:(NSData *)data
-                             error:(NSError **)error
+- (BOOL)fileSendChunk:(const uint8_t *)data
+        forFileNumber:(OCTToxFileNumber)fileNumber
+         friendNumber:(OCTToxFriendNumber)friendNumber
+             position:(OCTToxFileSize)position
+               length:(size_t)length
+                error:(NSError **)error
 {
     TOX_ERR_FILE_SEND_CHUNK cError;
-    const uint8_t *cData = [data bytes];
 
-    bool result = tox_file_send_chunk(self.tox, friendNumber, fileNumber, position, cData, (uint32_t)data.length, &cError);
+    bool result = tox_file_send_chunk(self.tox, friendNumber, fileNumber, position, data, length, &cError);
 
     [self fillError:error withCErrorFileSendChunk:cError];
 
@@ -1794,15 +1796,7 @@ void fileReceiveChunkCallback(
 {
     OCTTox *tox = (__bridge OCTTox *)(userData);
 
-    NSData *chunk = nil;
-
-    if (length) {
-        chunk = [NSData dataWithBytes:cData length:length];
+    if ([tox.delegate respondsToSelector:@selector(tox:fileReceiveChunk:length:fileNumber:friendNumber:position:)]) {
+        [tox.delegate tox:tox fileReceiveChunk:cData length:length fileNumber:fileNumber friendNumber:friendNumber position:position];
     }
-
-    dispatch_async(dispatch_get_main_queue(), ^{
-        if ([tox.delegate respondsToSelector:@selector(tox:fileReceiveChunk:fileNumber:friendNumber:position:)]) {
-            [tox.delegate tox:tox fileReceiveChunk:chunk fileNumber:fileNumber friendNumber:friendNumber position:position];
-        }
-    });
 }

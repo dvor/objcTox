@@ -764,10 +764,11 @@ void mocked_tox_self_get_public_key(const Tox *tox, uint8_t *public_key);
         fileReceiveChunkCallback(NULL, 5, 4, 250, (const uint8_t *)"data", 4, (__bridge void *)self.tox);
 
     } expectBlock:^(id<OCTToxDelegate> delegate) {
-        NSData *data = [NSData dataWithBytes:"data" length:4];
+        const uint8_t *data = (uint8_t *)"data";
 
         OCMExpect([self.tox.delegate tox:self.tox
-                        fileReceiveChunk:[OCMArg isEqual:data]
+                        fileReceiveChunk:data
+                                  length:4
                               fileNumber:4
                             friendNumber:5
                                 position:250]);

@@ -88,23 +88,11 @@
 
 - (void)configure
 {
-    OCTRealmManager *realmManager = [self.dataSource managerGetRealmManager];
-    RBQFetchRequest *fetchResult = [realmManager fetchRequestForClass:[OCTFriend class] withPredicate:nil];
-
-    NSMutableArray *friendsArray = [NSMutableArray new];
-
-    for (OCTFriend *friend in [fetchResult fetchObjects]) {
-        [friendsArray addObject:friend];
-    }
-
-    // reseting some of friend properties
-    [realmManager updateObjectsWithoutNotification:^{
-        for (OCTFriend *friend in friendsArray) {
-            friend.status = OCTToxUserStatusNone;
-            friend.isConnected = NO;
-            friend.connectionStatus = OCTToxConnectionStatusNone;
-            friend.isTyping = NO;
-        }
+    [[self.dataSource managerGetRealmManager] updateObjectsOfClass:[OCTFriend class] withoutNotificationUsingBlock:^(OCTFriend *friend) {
+        friend.status = OCTToxUserStatusNone;
+        friend.isConnected = NO;
+        friend.connectionStatus = OCTToxConnectionStatusNone;
+        friend.isTyping = NO;
     }];
 }
 

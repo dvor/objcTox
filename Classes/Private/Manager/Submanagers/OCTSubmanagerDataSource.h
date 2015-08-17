@@ -16,6 +16,7 @@
 @protocol OCTSubmanagerDataSource <NSObject>
 
 - (OCTTox *)managerGetTox;
+- (dispatch_queue_t)managerGetToxQueue;
 - (BOOL)managerIsToxConnected;
 - (void)managerSaveTox;
 - (OCTRealmManager *)managerGetRealmManager;
