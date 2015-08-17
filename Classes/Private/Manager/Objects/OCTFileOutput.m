@@ -15,9 +15,9 @@
 
 @interface OCTFileOutput ()
 
-@property (copy)   NSString *_finalPathName;
-@property (copy)   NSString *_temporaryPathName;
-@property (strong) NSFileHandle *_writeHandle;
+@property (copy, atomic)   NSString *_finalPathName;
+@property (copy, atomic)   NSString *_temporaryPathName;
+@property (strong, atomic) NSFileHandle *_writeHandle;
 
 @end
 

@@ -16,9 +16,9 @@
 @property (weak, atomic)   OCTSubmanagerFiles *fileManager;
 // Realm identifier
 @property (copy, atomic)   NSString           *fileIdentifier;
-@property (atomic)         OCTToxFriendNumber friendNumber;
-@property (atomic)         OCTToxFileNumber fileNumber;
-@property (atomic)         OCTToxFileSize fileSize;
+@property (assign, atomic) OCTToxFriendNumber friendNumber;
+@property (assign, atomic) OCTToxFileNumber fileNumber;
+@property (assign, atomic) OCTToxFileSize fileSize;
 
 - (NSData *)archiveConduit;
 - (void)control:(OCTToxFileControl)ctl;

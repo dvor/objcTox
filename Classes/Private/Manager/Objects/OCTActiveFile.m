@@ -57,17 +57,17 @@ static void OCTSetFileError(NSError **errorptr, NSInteger code, NSString *descri
 
 @interface OCTActiveFile ()
 
-@property (readwrite) OCTToxFileSize bytesMoved;
-@property (atomic)    BOOL isConduitOpen;
+@property (assign, readwrite) OCTToxFileSize bytesMoved;
+@property (assign, atomic)    BOOL isConduitOpen;
 
-@property (atomic)    unsigned long lastCountedTime;
-@property (atomic)    unsigned long lastProgressUpdateTime;
-@property (atomic)    OCTToxFileSize *transferRateCounters;
-@property (atomic)    long rollingIndex;
+@property (assign, atomic)    unsigned long lastCountedTime;
+@property (assign, atomic)    unsigned long lastProgressUpdateTime;
+@property (assign, atomic)    OCTToxFileSize *transferRateCounters;
+@property (assign, atomic)    long rollingIndex;
 
-@property (copy)      OCTFileNotificationBlock notificationBlock;
+@property (copy, atomic)      OCTFileNotificationBlock notificationBlock;
 
-@property (atomic)    BOOL suppressNotifications;
+@property (assign, atomic)    BOOL suppressNotifications;
 
 @end
 

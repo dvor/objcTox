@@ -15,10 +15,10 @@
 
 @interface OCTFileInput ()
 
-@property (copy)   NSString *path;
-@property (strong) NSFileHandle *readHandle;
-@property NSTimeInterval modifiedTime;
-@property OCTToxFileSize knownFileSize;
+@property (copy, atomic)   NSString *path;
+@property (strong, atomic) NSFileHandle *readHandle;
+@property (assign, atomic) NSTimeInterval modifiedTime;
+@property (assign, atomic) OCTToxFileSize knownFileSize;
 
 @end
 
