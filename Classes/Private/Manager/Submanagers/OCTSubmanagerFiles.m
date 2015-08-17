@@ -206,8 +206,12 @@ void OCTExceptFileNotInbound(void)
     }
 
     f.receiver = saver;
-    [f resumeWithError:error];
-    return f;
+    if ([f resumeWithError:error]) {
+        return f;
+    }
+    else {
+        return nil;
+    }
 }
 
 - (nullable OCTActiveFile *)activeFileForMessage:(OCTMessageAbstract *)file
@@ -412,7 +416,7 @@ void OCTExceptFileNotInbound(void)
     NSError *error = nil;
     BOOL seekOK = [[self.dataSource managerGetTox] fileSeekForFileNumber:fileNumber friendNumber:msga.sender.friendNumber position:fileMsg.filePosition error:&error];
 
-    if (!seekOK) {
+    if (! seekOK) {
         DDLogError(@"toxcore failed seeking the file to position %lld", fileMsg.filePosition);
         [[self.dataSource managerGetTox] fileSendControlForFileNumber:fileNumber friendNumber:msga.sender.friendNumber control:OCTToxFileControlCancel error:&error];
         return NO;
@@ -535,7 +539,7 @@ void OCTExceptFileNotInbound(void)
         NSError *error = nil;
         BOOL ok = [[self.dataSource managerGetTox] fileSendControlForFileNumber:fileNumber friendNumber:friendNumber control:OCTToxFileControlCancel error:&error];
 
-        if (!ok) {
+        if (! ok) {
             DDLogError(@"nevermind, got error %@ and now the client is screwed", error);
         }
 
