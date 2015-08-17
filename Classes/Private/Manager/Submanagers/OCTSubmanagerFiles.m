@@ -142,7 +142,7 @@ void OCTExceptFileNotInbound(void)
     OCTFriend *f = chat.friends.firstObject;
     OCTToxFileNumber n = [[self.dataSource managerGetTox] fileSendWithFriendNumber:f.friendNumber kind:OCTFileUsageToToxFileKind(type) fileSize:file.fileSize fileId:nil fileName:name error:&err];
 
-    if (err) {
+    if (n == kOCTToxFileNumberFailure) {
         if (error) {
             *error = err;
         }
@@ -364,7 +364,7 @@ void OCTExceptFileNotInbound(void)
                                                                           fileName:mf.fileName
                                                                              error:&error];
 
-    if (error) {
+    if (n == kOCTToxFileNumberFailure) {
         DDLogError(@"toxcore rejected file send: %@", error);
         return NO;
     }
@@ -412,9 +412,9 @@ void OCTExceptFileNotInbound(void)
     // now it can be resumed
 
     NSError *error = nil;
-    [[self.dataSource managerGetTox] fileSeekForFileNumber:fileNumber friendNumber:msga.sender.friendNumber position:fileMsg.filePosition error:&error];
+    BOOL seekOK = [[self.dataSource managerGetTox] fileSeekForFileNumber:fileNumber friendNumber:msga.sender.friendNumber position:fileMsg.filePosition error:&error];
 
-    if (error) {
+    if (!seekOK) {
         DDLogError(@"toxcore failed seeking the file to position %lld", fileMsg.filePosition);
         [[self.dataSource managerGetTox] fileSendControlForFileNumber:fileNumber friendNumber:msga.sender.friendNumber control:OCTToxFileControlCancel error:&error];
         return NO;
@@ -535,9 +535,9 @@ void OCTExceptFileNotInbound(void)
         DDLogInfo(@"received a non-enumed file kind (outdated toxcore?); cancelling it");
 
         NSError *error = nil;
-        [[self.dataSource managerGetTox] fileSendControlForFileNumber:fileNumber friendNumber:friendNumber control:OCTToxFileControlCancel error:&error];
+        BOOL ok = [[self.dataSource managerGetTox] fileSendControlForFileNumber:fileNumber friendNumber:friendNumber control:OCTToxFileControlCancel error:&error];
 
-        if (error) {
+        if (!ok) {
             DDLogError(@"nevermind, got error %@ and now the client is screwed", error);
         }
 
