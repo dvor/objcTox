@@ -152,36 +152,32 @@ void OCTExceptFileNotInbound(void)
         return nil;
     }
 
-    OCTMessageFile *newFileMessage = [[OCTMessageFile alloc] init];
-    newFileMessage.fileNumber = n;
-    newFileMessage.fileSize = file.fileSize;
-    newFileMessage.fileName = name;
-    newFileMessage.fileUsage = type;
-    newFileMessage.fileState = OCTMessageFileStateWaitingConfirmation;
-    newFileMessage.pauseFlags = OCTPauseFlagsFriend;
-    newFileMessage.filePath = @"";
-    newFileMessage.filePosition = 0;
-    newFileMessage.restorationTag = [NSData data];
-    newFileMessage.fileTag = [[self.dataSource managerGetTox] fileGetFileIdForFileNumber:n friendNumber:f.friendNumber error:nil];
+    OCTMessageAbstract *msg = [self createBlankMessage];
+    OCTMessageFile *fmsg = msg.messageFile;
 
-    OCTMessageAbstract *newAbstractMessage = [[OCTMessageAbstract alloc] init];
-    newAbstractMessage.dateInterval = [NSDate timeIntervalSinceReferenceDate] + NSTimeIntervalSince1970;
-    newAbstractMessage.sender = nil;
-    newAbstractMessage.chat = chat;
-    newAbstractMessage.messageFile = newFileMessage;
+    fmsg.fileNumber = n;
+    fmsg.fileSize = file.fileSize;
+    fmsg.fileName = name;
+    fmsg.fileUsage = type;
+    fmsg.pauseFlags = OCTPauseFlagsFriend;
+    fmsg.fileTag = [[self.dataSource managerGetTox] fileGetFileIdForFileNumber:n friendNumber:f.friendNumber error:nil];
 
-    OCTActiveOutgoingFile *send = [self createSendingFileForFriend:f message:newFileMessage provider:file];
+    msg.sender = nil;
+    msg.chat = chat;
+    msg.messageFile = fmsg;
+
+    OCTActiveOutgoingFile *send = (OCTActiveOutgoingFile *)[self createActiveFileForFriend:f message:fmsg provider:file isOutgoing:YES];
     [self setActiveFile:send forFriendNumber:f.friendNumber fileNumber:n];
     self.activeFiles[@(f.friendNumber)][@(n)] = send;
 
-    [[self.dataSource managerGetRealmManager] addObject:newAbstractMessage];
+    [[self.dataSource managerGetRealmManager] addObject:msg];
     [[self.dataSource managerGetRealmManager] updateObject:chat withBlock:^(OCTChat *theChat) {
-        theChat.lastMessage = newAbstractMessage;
-        theChat.lastActivityDateInterval = newAbstractMessage.dateInterval;
+        theChat.lastMessage = msg;
+        theChat.lastActivityDateInterval = msg.dateInterval;
     }];
 
     if (msgout) {
-        *msgout = newAbstractMessage;
+        *msgout = msg;
     }
 
     // [send resumeWithError:error];
@@ -304,26 +300,27 @@ void OCTExceptFileNotInbound(void)
     return self.activeFiles[@(fn)][@(file)];
 }
 
-- (nonnull OCTActiveOutgoingFile *)createSendingFileForFriend:(OCTFriend *)f message:(OCTMessageFile *)msg provider:(id<OCTFileSending>)prov
+- (nonnull OCTActiveFile *)createActiveFileForFriend:(OCTFriend *)f message:(OCTMessageFile *)msg provider:(id<OCTFileConduit>)prov isOutgoing:(BOOL)outgoing
 {
-    OCTActiveOutgoingFile *ret = [[OCTActiveOutgoingFile alloc] init];
+    OCTActiveFile *ret;
+
+    if (outgoing) {
+        OCTActiveOutgoingFile *outf = [[OCTActiveOutgoingFile alloc] init];
+        outf.sender = (id<OCTFileSending>)prov;
+        outf.fileSize = outf.sender.fileSize;
+        ret = outf;
+    }
+    else {
+        OCTActiveIncomingFile *inf = [[OCTActiveIncomingFile alloc] init];
+        inf.receiver = (id<OCTFileReceiving>)prov;
+        inf.fileSize = msg.fileSize;
+        ret = inf;
+    }
+
     ret.fileManager = self;
     ret.fileIdentifier = msg.uniqueIdentifier;
     ret.fileNumber = msg.fileNumber;
     ret.friendNumber = f.friendNumber;
-    ret.fileSize = prov.fileSize;
-    ret.sender = prov;
-    return ret;
-}
-
-- (nonnull OCTActiveIncomingFile *)createReceivingFileForMessage:(OCTMessageAbstract *)f
-{
-    OCTActiveIncomingFile *ret = [[OCTActiveIncomingFile alloc] init];
-    ret.fileManager = self;
-    ret.fileIdentifier = f.messageFile.uniqueIdentifier;
-    ret.fileNumber = f.messageFile.fileNumber;
-    ret.friendNumber = f.sender.friendNumber;
-    ret.fileSize = f.messageFile.fileSize;
     return ret;
 }
 
@@ -378,7 +375,7 @@ void OCTExceptFileNotInbound(void)
         msga_.messageFile.pauseFlags = OCTPauseFlagsFriend;
     }];
 
-    OCTActiveOutgoingFile *outf = [self createSendingFileForFriend:f message:msga.messageFile provider:sender];
+    OCTActiveOutgoingFile *outf = (OCTActiveOutgoingFile *)[self createActiveFileForFriend:f message:mf provider:sender isOutgoing:YES];
     [self setActiveFile:outf forFriendNumber:outf.friendNumber fileNumber:n];
     return YES;
 }
@@ -430,10 +427,24 @@ void OCTExceptFileNotInbound(void)
         msga_.messageFile.pauseFlags = OCTPauseFlagsSelf;
     }];
 
-    OCTActiveIncomingFile *inf = [self createReceivingFileForMessage:msga];
-    inf.receiver = rcvr;
+    OCTActiveIncomingFile *inf = (OCTActiveIncomingFile *)[self createActiveFileForFriend:msga.sender message:msga.messageFile provider:rcvr isOutgoing:NO];
     [self setActiveFile:inf forFriendNumber:msga.sender.friendNumber fileNumber:fileNumber];
     return YES;
+}
+
+- (OCTMessageAbstract *)createBlankMessage
+{
+    OCTMessageFile *newFileMessage = [[OCTMessageFile alloc] init];
+    newFileMessage.fileState = OCTMessageFileStateWaitingConfirmation;
+    newFileMessage.filePath = @"";
+    newFileMessage.filePosition = 0;
+    newFileMessage.restorationTag = [NSData data];
+
+    OCTMessageAbstract *newAbstractMessage = [[OCTMessageAbstract alloc] init];
+    newAbstractMessage.dateInterval = [NSDate timeIntervalSinceReferenceDate] + NSTimeIntervalSince1970;
+    newAbstractMessage.messageFile = newFileMessage;
+
+    return newAbstractMessage;
 }
 
 #pragma mark - OCTToxDelegate.
@@ -547,41 +558,36 @@ void OCTExceptFileNotInbound(void)
             }
         }
 
-        OCTMessageFile *newFileMessage = [[OCTMessageFile alloc] init];
-        newFileMessage.fileNumber = fileNumber;
-        newFileMessage.fileSize = fileSize;
-        newFileMessage.fileName = OCTSanitizeFilename(fileName);
+        OCTMessageAbstract *msg = [self createBlankMessage];
+        OCTMessageFile *fmsg = msg.messageFile;
 
-        newFileMessage.fileUsage = OCTToxFileKindToFileUsage(kind);
+        fmsg.fileNumber = fileNumber;
+        fmsg.fileSize = fileSize;
+        fmsg.fileName = OCTSanitizeFilename(fileName);
+        fmsg.fileUsage = OCTToxFileKindToFileUsage(kind);
 
 #ifdef OBJCTOX_SHOULD_BE_COMPATIBLE_WITH_UTOX_INLINE_IMAGES
         if ([fileName isEqualToString:@"utox-inline.png"]) {
-            newFileMessage.fileUsage = OCTFileUsageInlinePhoto;
+            fmsg.fileUsage = OCTFileUsageInlinePhoto;
         }
 #endif
 
-        newFileMessage.fileState = OCTMessageFileStateWaitingConfirmation;
-        newFileMessage.pauseFlags = OCTPauseFlagsSelf;
-        newFileMessage.filePath = @"";
-        newFileMessage.filePosition = 0;
-        newFileMessage.fileTag = tag;
-        newFileMessage.restorationTag = [NSData data];
+        fmsg.pauseFlags = OCTPauseFlagsSelf;
+        fmsg.fileTag = tag;
+        fmsg.restorationTag = [NSData data];
 
         OCTFriend *f = [[self.dataSource managerGetRealmManager] friendWithFriendNumber:friendNumber];
         OCTChat *c = [[self.dataSource managerGetRealmManager] getOrCreateChatWithFriend:f];
 
-        OCTMessageAbstract *newAbstractMessage = [[OCTMessageAbstract alloc] init];
-        newAbstractMessage.dateInterval = [NSDate timeIntervalSinceReferenceDate] + NSTimeIntervalSince1970;
-        newAbstractMessage.sender = f;
-        newAbstractMessage.chat = c;
-        newAbstractMessage.messageFile = newFileMessage;
+        msg.sender = f;
+        msg.chat = c;
 
-        [self setActiveFile:[self createReceivingFileForMessage:newAbstractMessage] forFriendNumber:friendNumber fileNumber:fileNumber];
+        [self setActiveFile:[self createActiveFileForFriend:f message:fmsg provider:nil isOutgoing:NO] forFriendNumber:friendNumber fileNumber:fileNumber];
 
-        [[self.dataSource managerGetRealmManager] addObject:newAbstractMessage];
+        [[self.dataSource managerGetRealmManager] addObject:msg];
         [[self.dataSource managerGetRealmManager] updateObject:c withBlock:^(OCTChat *theChat) {
-            theChat.lastMessage = newAbstractMessage;
-            theChat.lastActivityDateInterval = newAbstractMessage.dateInterval;
+            theChat.lastMessage = msg;
+            theChat.lastActivityDateInterval = msg.dateInterval;
         }];
     }
 }
