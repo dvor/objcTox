@@ -74,7 +74,7 @@
         savedData = [NSData dataWithContentsOfFile:savedDataPath];
     }
 
-    _tox = [[OCTTox alloc] initWithOptions:configuration.options savedData:savedData error:nil];
+    _tox = [[OCTTox alloc] initWithOptions:configuration.options savedData:savedData error:error];
 
     if (! _tox) {
         return nil;
