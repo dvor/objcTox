@@ -33,7 +33,7 @@ static NSString *OCTSanitizeFilename(NSString *filename)
     if ([mut characterAtIndex:0] == '.') {
         [mut replaceCharactersInRange:NSMakeRange(0, 1) withString:@"_"];
     }
-    return mut;
+    return [mut copy];
 }
 
 static OCTFileUsage OCTToxFileKindToFileUsage(OCTToxFileKind k)
