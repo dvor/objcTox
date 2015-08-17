@@ -33,7 +33,7 @@
         NSError *error = nil;
         NSDictionary *attrs = [[NSFileManager defaultManager] attributesOfItemAtPath:[path stringByResolvingSymlinksInPath] error:&error];
 
-        if (error) {
+        if (!attrs) {
             DDLogError(@"unable to stat file at path: %@ because: %@", path, error);
             return nil;
         }
@@ -120,7 +120,7 @@
     NSError *error = nil;
     NSDictionary *attrs = [[NSFileManager defaultManager] attributesOfItemAtPath:[self.path stringByResolvingSymlinksInPath] error:&error];
 
-    if (error) {
+    if (!attrs) {
         DDLogError(@"unable to stat file at path: %@ because: %@", self.path, error);
         return NO;
     }
