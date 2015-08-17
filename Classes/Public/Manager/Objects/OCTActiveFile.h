@@ -42,10 +42,15 @@ typedef void (^OCTFileNotificationBlock)(OCTActiveFile *__nonnull);
  */
 @property (nonatomic, readonly) OCTToxFileSize bytesPerSecond;
 
+/**
+ * This block will be called periodically on the main thread when
+ * data is sent/received. Use this to update UI, etc.
+ * To stop receiving updates, set it to nil.
+ */
+@property (copy, atomic) OCTFileNotificationBlock __nullable notificationBlock;
+
 - (BOOL)pauseWithError:(NSError *__nullable *__nullable)error;
 - (BOOL)resumeWithError:(NSError *__nullable *__nullable)error;
 - (BOOL)cancelWithError:(NSError *__nullable *__nullable)error;
-
-- (void)beginReceivingLiveUpdatesWithBlock:(nullable OCTFileNotificationBlock)blk;
 
 @end

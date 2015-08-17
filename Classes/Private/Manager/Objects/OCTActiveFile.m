@@ -65,8 +65,6 @@ static void OCTSetFileError(NSError **errorptr, NSInteger code, NSString *descri
 @property (assign, atomic)    OCTToxFileSize *transferRateCounters;
 @property (assign, atomic)    long rollingIndex;
 
-@property (copy, atomic)      OCTFileNotificationBlock notificationBlock;
-
 @property (assign, atomic)    BOOL suppressNotifications;
 
 @end
@@ -291,11 +289,6 @@ static void OCTSetFileError(NSError **errorptr, NSInteger code, NSString *descri
     else {
         return accumulator / divisor;
     }
-}
-
-- (void)beginReceivingLiveUpdatesWithBlock:(void (^)(OCTActiveFile *))blk
-{
-    self.notificationBlock = blk;
 }
 
 #pragma mark - Realm update stuff
