@@ -13,6 +13,9 @@
 #undef LOG_LEVEL_DEF
 #define LOG_LEVEL_DEF LOG_LEVEL_DEBUG
 
+static NSString *const kModifiedTimeKey = @"modifiedTime";
+static NSString *const kFilePathKey = @"filePath";
+
 @interface OCTFileInput ()
 
 @property (copy, atomic)   NSString *path;
@@ -33,7 +36,7 @@
         NSError *error = nil;
         NSDictionary *attrs = [[NSFileManager defaultManager] attributesOfItemAtPath:[path stringByResolvingSymlinksInPath] error:&error];
 
-        if (!attrs) {
+        if (! attrs) {
             DDLogError(@"unable to stat file at path: %@ because: %@", path, error);
             return nil;
         }
@@ -51,8 +54,12 @@
     self = [super init];
 
     if (self) {
-        self.path = [aDecoder decodeObjectForKey:@"_filePath"];
-        self.modifiedTime = [aDecoder decodeDoubleForKey:@"modifiedTime"];
+        self.path = [aDecoder decodeObjectForKey:kFilePathKey];
+        self.modifiedTime = [aDecoder decodeDoubleForKey:kModifiedTimeKey];
+    }
+
+    if (! self.path || (self.modifiedTime < 0)) {
+        return nil;
     }
 
     return self;
@@ -60,8 +67,8 @@
 
 - (void)encodeWithCoder:(nonnull NSCoder *)aCoder
 {
-    [aCoder encodeObject:self.path forKey:@"_filePath"];
-    [aCoder encodeDouble:self.modifiedTime forKey:@"modifiedTime"];
+    [aCoder encodeObject:self.path forKey:kFilePathKey];
+    [aCoder encodeDouble:self.modifiedTime forKey:kModifiedTimeKey];
 }
 
 #pragma mark - OCTFileSending
@@ -120,7 +127,7 @@
     NSError *error = nil;
     NSDictionary *attrs = [[NSFileManager defaultManager] attributesOfItemAtPath:[self.path stringByResolvingSymlinksInPath] error:&error];
 
-    if (!attrs) {
+    if (! attrs) {
         DDLogError(@"unable to stat file at path: %@ because: %@", self.path, error);
         return NO;
     }

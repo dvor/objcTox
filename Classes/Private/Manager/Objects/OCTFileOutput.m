@@ -13,11 +13,15 @@
 #undef LOG_LEVEL_DEF
 #define LOG_LEVEL_DEF LOG_LEVEL_DEBUG
 
+static NSString *const kPartialFileExtension = @"partial";
+static NSString *const kTemporaryPathKey = @"temporaryPathName";
+static NSString *const kFinalPathKey = @"finalPathName";
+
 @interface OCTFileOutput ()
 
-@property (copy, atomic)   NSString *_finalPathName;
-@property (copy, atomic)   NSString *_temporaryPathName;
-@property (strong, atomic) NSFileHandle *_writeHandle;
+@property (copy, atomic)   NSString *finalPathName;
+@property (copy, atomic)   NSString *temporaryPathName;
+@property (strong, atomic) NSFileHandle *writeHandle;
 
 @end
 
@@ -30,9 +34,9 @@
 
     if (self) {
         NSString *uuid = [NSUUID UUID].UUIDString;
-        self._finalPathName = [[cf pathForDownloadedFilesDirectory] stringByAppendingPathComponent:uuid];
-        self._temporaryPathName = [self._finalPathName stringByAppendingPathExtension:@"partial"];
-        DDLogDebug(@"OCTFileOutput writing to %@ using partial %@", self._finalPathName, self._temporaryPathName);
+        self.finalPathName = [[cf pathForDownloadedFilesDirectory] stringByAppendingPathComponent:uuid];
+        self.temporaryPathName = [self.finalPathName stringByAppendingPathExtension:kPartialFileExtension];
+        DDLogDebug(@"OCTFileOutput writing to %@ using partial %@", self.finalPathName, self.temporaryPathName);
     }
 
     return self;
@@ -43,8 +47,8 @@
     self = [super init];
 
     if (self) {
-        self._finalPathName = path;
-        self._temporaryPathName = [self._finalPathName stringByAppendingPathExtension:@"partial"];
+        self.finalPathName = path;
+        self.temporaryPathName = [self.finalPathName stringByAppendingPathExtension:kPartialFileExtension];
     }
 
     return self;
@@ -57,8 +61,12 @@
     self = [super init];
 
     if (self) {
-        self._finalPathName = [aDecoder decodeObjectForKey:@"_finalPathName"];
-        self._temporaryPathName = [aDecoder decodeObjectForKey:@"_temporaryPathName"];
+        self.finalPathName = [aDecoder decodeObjectForKey:kFinalPathKey];
+        self.temporaryPathName = [aDecoder decodeObjectForKey:kTemporaryPathKey];
+    }
+
+    if (! self.finalPathName || ! self.temporaryPathName) {
+        return nil;
     }
 
     return self;
@@ -66,16 +74,16 @@
 
 - (void)encodeWithCoder:(nonnull NSCoder *)aCoder
 {
-    [aCoder encodeObject:self._finalPathName forKey:@"_finalPathName"];
-    [aCoder encodeObject:self._temporaryPathName forKey:@"_temporaryPathName"];
+    [aCoder encodeObject:self.finalPathName forKey:kFinalPathKey];
+    [aCoder encodeObject:self.temporaryPathName forKey:kTemporaryPathKey];
 }
 
 #pragma mark - <OCTFileConduit>
 
 - (BOOL)transferWillBecomeActive:(nonnull OCTActiveFile *)file
 {
-    if (! [[NSFileManager defaultManager] fileExistsAtPath:self._temporaryPathName]) {
-        [[NSFileManager defaultManager] createFileAtPath:self._temporaryPathName contents:nil
+    if (! [[NSFileManager defaultManager] fileExistsAtPath:self.temporaryPathName]) {
+        [[NSFileManager defaultManager] createFileAtPath:self.temporaryPathName contents:nil
 #if TARGET_OS_IPHONE
                                               attributes:@{NSFileProtectionKey : NSFileProtectionCompleteUntilFirstUserAuthentication}
 #else
@@ -83,10 +91,10 @@
 #endif
         ];
     }
-    self._writeHandle = [NSFileHandle fileHandleForUpdatingAtPath:self._temporaryPathName];
+    self.writeHandle = [NSFileHandle fileHandleForUpdatingAtPath:self.temporaryPathName];
     DDLogDebug(@"OCTFileOutput transferWillBecomeActive...");
 
-    if (! self._writeHandle) {
+    if (! self.writeHandle) {
         return NO;
     }
 
@@ -95,33 +103,33 @@
 
 - (void)transferWillBecomeInactive:(nonnull OCTActiveFile *)file
 {
-    [self._writeHandle closeFile];
-    self._writeHandle = nil;
+    [self.writeHandle closeFile];
+    self.writeHandle = nil;
     DDLogDebug(@"OCTFileOutput %@ closed.", self);
 }
 
 - (void)transferWillComplete:(nonnull OCTActiveFile *)file
 {
     NSError *error = nil;
-    BOOL ok = [[NSFileManager defaultManager] moveItemAtPath:self._temporaryPathName toPath:self._finalPathName error:&error];
+    BOOL ok = [[NSFileManager defaultManager] moveItemAtPath:self.temporaryPathName toPath:self.finalPathName error:&error];
 
-    if (!ok) {
+    if (! ok) {
         DDLogError(@"OCTFileOutput ERROR: failed to move file to finalDestination. Error follows...");
         DDLogError(@"%@", error);
     }
     else {
-        DDLogDebug(@"OCTFileOutput: File is now ready at %@. Thank you and come again", self._finalPathName);
+        DDLogDebug(@"OCTFileOutput: File is now ready at %@. Thank you and come again", self.finalPathName);
     }
 }
 
 - (BOOL)moveToPosition:(OCTToxFileSize)offset
 {
     @try {
-        [self._writeHandle seekToFileOffset:offset];
+        [self.writeHandle seekToFileOffset:offset];
     }
     @catch (NSException *exception) {
         DDLogWarn(@"OCTFileOutput WARNING: failed to seek to position %lu in file %@ [%@]. The file transfer will be aborted.",
-                  (unsigned long)offset, self._writeHandle, self._temporaryPathName);
+                  (unsigned long)offset, self.writeHandle, self.temporaryPathName);
         return NO;
     }
     return YES;
@@ -139,12 +147,12 @@
 {
     // possible 32bit bug: we are forcibly truncating chunk_size.
     // The good news is, we're never going to encounter a chunk that big.
-    write(self._writeHandle.fileDescriptor, buffer, (size_t)chunk_size);
+    write(self.writeHandle.fileDescriptor, buffer, (size_t)chunk_size);
 }
 
 - (NSString *)finalDestination
 {
-    return self._finalPathName;
+    return self.finalPathName;
 }
 
 @end

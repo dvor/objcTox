@@ -175,7 +175,7 @@ static void OCTSetFileError(NSError **errorptr, NSInteger code, NSString *descri
             DDLogDebug(@"_control: obeying resume message from remote.");
             if (mf.pauseFlags == OCTPauseFlagsFriend) {
                 BOOL ok = [self openConduitIfNeeded];
-                if (!ok) {
+                if (! ok) {
                     DDLogError(@"conduit failed to reopen when resuming file, cancelling it");
                     [[self.fileManager.dataSource managerGetTox] fileSendControlForFileNumber:self.fileNumber friendNumber:self.friendNumber control:OCTToxFileControlCancel error:nil];
                     [self markFileAsCancelled:self];
