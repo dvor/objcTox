@@ -442,7 +442,7 @@ static void OCTSetFileError(NSError **errorptr, NSInteger code, NSString *descri
             [self.receiver moveToPosition:p];
         }
         else {
-            DDLogWarn(@"OCTActiveInBoundFile WARNING: receiver %@ does not support seeking, but we received out of order file chunk for position %llu."
+            DDLogWarn(@"OCTActiveIncomingFile WARNING: receiver %@ does not support seeking, but we received out of order file chunk for position %llu."
                       "(I think the file position is %llu.) The file will be corrupted.", self.receiver, p, self.bytesMoved + 1);
         }
     }
@@ -478,7 +478,7 @@ static void OCTSetFileError(NSError **errorptr, NSInteger code, NSString *descri
             [self.sender moveToPosition:p];
         }
         else {
-            DDLogWarn(@"OCTActiveInBoundFile WARNING: receiver %@ does not support seeking, but we received out of order file chunk for position %llu."
+            DDLogWarn(@"OCTActiveOutgoingFile WARNING: sender %@ does not support seeking, but we need to send out of order file chunk for position %llu."
                       "(I think the file position is %llu.) The file will be corrupted.", self.sender, p, self.bytesMoved + 1);
         }
         self.bytesMoved = p;
