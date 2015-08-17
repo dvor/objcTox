@@ -130,9 +130,7 @@ static void OCTSetFileError(NSError **errorptr, NSInteger code, NSString *descri
 
     if (progressdelta >= kProgressUpdateInterval) {
         self.lastProgressUpdateTime = now;
-        dispatch_async(dispatch_get_main_queue(), ^{
-            [self sendProgressUpdateNow];
-        });
+        [self sendProgressUpdateNow];
     }
 }
 
@@ -176,9 +174,7 @@ static void OCTSetFileError(NSError **errorptr, NSInteger code, NSString *descri
         case OCTToxFileControlResume: {
             DDLogDebug(@"_control: obeying resume message from remote.");
             if (mf.pauseFlags == OCTPauseFlagsFriend) {
-                dispatch_sync(self.fileManager.queue, ^{
-                    [self openConduitIfNeeded];
-                });
+                [self openConduitIfNeeded];
                 [self resumeFile:self];
             }
             else {
@@ -200,7 +196,10 @@ static void OCTSetFileError(NSError **errorptr, NSInteger code, NSString *descri
 - (void)stopFileNow
 {
     dispatch_async(self.fileManager.queue, ^{
-        [self closeConduitIfNeeded];
+        if (self.isConduitOpen) {
+            [self.conduit transferWillBecomeInactive:self];
+            self.isConduitOpen = NO;
+        }
 
         dispatch_async(dispatch_get_main_queue(), ^{
             [self.fileManager removeFile:self];
@@ -216,30 +215,20 @@ static void OCTSetFileError(NSError **errorptr, NSInteger code, NSString *descri
 
 - (BOOL)openConduitIfNeeded
 {
-    if (! self.isConduitOpen) {
-        BOOL ret = [self.conduit transferWillBecomeActive:self];
+    __block BOOL ret = YES;
+    dispatch_sync(self.fileManager.queue, ^{
+        if (! self.isConduitOpen) {
+            ret = [self.conduit transferWillBecomeActive:self];
 
-        if ([self.conduit respondsToSelector:@selector(moveToPosition:)]) {
-            [self.conduit moveToPosition:self.bytesMoved];
+            if ([self.conduit respondsToSelector:@selector(moveToPosition:)]) {
+                [self.conduit moveToPosition:self.bytesMoved];
+            }
+
+            self.isConduitOpen = ret;
+            return;
         }
-
-        self.isConduitOpen = ret;
-        return ret;
-    }
-    else {
-        return YES;
-    }
-}
-
-- (void)closeConduitIfNeeded
-{
-    if (! self.isConduitOpen) {
-        return;
-    }
-    else {
-        [self.conduit transferWillBecomeInactive:self];
-        self.isConduitOpen = NO;
-    }
+    });
+    return ret;
 }
 
 - (void)sendProgressUpdateNow
@@ -247,9 +236,11 @@ static void OCTSetFileError(NSError **errorptr, NSInteger code, NSString *descri
     // don't post a notification if we're paused
     // (sometimes one manages to sneak in after we've updated the state in realm,
     //  and it messes up my client code...)
-    if (self.notificationBlock && ! self.suppressNotifications) {
-        self.notificationBlock(self);
-    }
+    dispatch_async(dispatch_get_main_queue(), ^{
+        if (self.notificationBlock && ! self.suppressNotifications) {
+            self.notificationBlock(self);
+        }
+    });
 }
 
 #pragma mark - Public API
@@ -351,12 +342,9 @@ static void OCTSetFileError(NSError **errorptr, NSInteger code, NSString *descri
 
     OCTMessageFile *mf = (OCTMessageFile *)[[self.fileManager.dataSource managerGetRealmManager] objectWithUniqueIdentifier:self.fileIdentifier class:[OCTMessageFile class]];
 
-    __block BOOL openOK = NO;
-    dispatch_sync(self.fileManager.queue, ^{
-        openOK = [self openConduitIfNeeded];
-    });
+    ok = [self openConduitIfNeeded];
 
-    if (! openOK) {
+    if (! ok) {
         DDLogWarn(@"OCTActiveFile WARNING: Couldn't prepare the conduit. The file transfer will be cancelled.");
 
         [[self.fileManager.dataSource managerGetTox] fileSendControlForFileNumber:self.fileNumber friendNumber:self.friendNumber control:OCTToxFileControlCancel error:nil];
