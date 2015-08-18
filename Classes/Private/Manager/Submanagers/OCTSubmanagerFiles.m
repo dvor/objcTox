@@ -166,7 +166,7 @@ void OCTExceptFileNotInbound(void)
     msg.chat = chat;
     msg.messageFile = fmsg;
 
-    OCTActiveOutgoingFile *send = (OCTActiveOutgoingFile *)[self createActiveFileForFriend:f message:fmsg provider:file isOutgoing:YES];
+    OCTActiveFile *send = [self createActiveFileForFriend:f message:fmsg provider:file isOutgoing:YES];
     [self setActiveFile:send forFriendNumber:f.friendNumber fileNumber:n];
 
     [[self.dataSource managerGetRealmManager] addObject:msg];
@@ -199,12 +199,12 @@ void OCTExceptFileNotInbound(void)
         return nil;
     }
 
-    OCTActiveIncomingFile *f = (OCTActiveIncomingFile *)[self realActiveFileForMessage:msg];
-    if (! [f isKindOfClass:[OCTActiveIncomingFile class]]) {
+    if (! msg.sender) {
         OCTExceptFileNotInbound();
         return nil;
     }
 
+    OCTActiveIncomingFile *f = (OCTActiveIncomingFile *)[self realActiveFileForMessage:msg];
     f.receiver = saver;
     if ([f resumeWithError:error]) {
         return f;
@@ -377,7 +377,7 @@ void OCTExceptFileNotInbound(void)
         msga_.messageFile.pauseFlags = OCTPauseFlagsFriend;
     }];
 
-    OCTActiveOutgoingFile *outf = (OCTActiveOutgoingFile *)[self createActiveFileForFriend:f message:mf provider:sender isOutgoing:YES];
+    OCTActiveFile *outf = [self createActiveFileForFriend:f message:mf provider:sender isOutgoing:YES];
     [self setActiveFile:outf forFriendNumber:outf.friendNumber fileNumber:n];
     return YES;
 }
@@ -429,7 +429,7 @@ void OCTExceptFileNotInbound(void)
         msga_.messageFile.pauseFlags = OCTPauseFlagsSelf;
     }];
 
-    OCTActiveIncomingFile *inf = (OCTActiveIncomingFile *)[self createActiveFileForFriend:msga.sender message:msga.messageFile provider:rcvr isOutgoing:NO];
+    OCTActiveFile *inf = [self createActiveFileForFriend:msga.sender message:msga.messageFile provider:rcvr isOutgoing:NO];
     [self setActiveFile:inf forFriendNumber:msga.sender.friendNumber fileNumber:fileNumber];
     return YES;
 }
@@ -482,9 +482,6 @@ void OCTExceptFileNotInbound(void)
 {
     OCTActiveOutgoingFile *outboundFile = (OCTActiveOutgoingFile *)[self activeFileForFriendNumber:friendNumber fileNumber:fileNumber];
 
-    NSAssert([outboundFile isMemberOfClass:[OCTActiveOutgoingFile class]],
-             @"Chunk requested for a bad file %@!", outboundFile);
-
     if (length == 0) {
         [[self.dataSource managerGetTox] fileSendChunk:NULL forFileNumber:fileNumber friendNumber:friendNumber position:position length:0 error:nil];
         [outboundFile completeFileTransferAndClose];
@@ -501,8 +498,6 @@ void OCTExceptFileNotInbound(void)
         position:(OCTToxFileSize)position
 {
     OCTActiveIncomingFile *inboundFile = (OCTActiveIncomingFile *)[self activeFileForFriendNumber:friendNumber fileNumber:fileNumber];
-
-    NSAssert([inboundFile isMemberOfClass:[OCTActiveIncomingFile class]], @"Received a chunk for a bad file %@!", inboundFile);
 
     if (length == 0) {
         [inboundFile completeFileTransferAndClose];
