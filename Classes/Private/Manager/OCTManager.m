@@ -37,6 +37,8 @@
 
 @property (strong, nonatomic, readonly) NSObject *toxSaveFileLock;
 
+@property (strong, atomic) NSNotificationCenter *notificationCenter;
+
 @end
 
 @implementation OCTManager
@@ -57,6 +59,8 @@
     if (! self) {
         return nil;
     }
+
+    self.notificationCenter = [[NSNotificationCenter alloc] init];
 
     [self validateConfiguration:configuration];
 
@@ -159,6 +163,11 @@
 - (dispatch_queue_t)managerGetToxQueue
 {
     return self.tox.queue;
+}
+
+- (NSNotificationCenter *)managerGetNotificationCenter
+{
+    return self.notificationCenter;
 }
 
 #pragma mark -  Private

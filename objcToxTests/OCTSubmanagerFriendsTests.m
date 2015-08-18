@@ -331,6 +331,19 @@ static NSString *const kMessage = @"kMessage";
     [self.submanager tox:self.tox friendConnectionStatusChanged:OCTToxConnectionStatusTCP friendNumber:kFriendNumber];
     XCTAssertEqual(friend.connectionStatus, OCTToxConnectionStatusTCP);
     XCTAssertTrue(friend.isConnected);
+
+    NSNotificationCenter *center = [[NSNotificationCenter alloc] init];
+    OCMStub([self.dataSource managerGetNotificationCenter]).andReturn(center);
+
+    XCTestExpectation *expect = [self expectationWithDescription:@""];
+    [center addObserverForName:kOCTFriendConnectionStatusChangeNotificationName object:nil queue:nil usingBlock:^(NSNotification *note) {
+        if ([note.object friendNumber] == kFriendNumber) {
+            [expect fulfill];
+        }
+    }];
+
+    [self.submanager tox:self.tox friendConnectionStatusChanged:OCTToxConnectionStatusUDP friendNumber:kFriendNumber];
+    [self waitForExpectationsWithTimeout:0.0 handler:nil];
 }
 
 #pragma mark -  Helper methods

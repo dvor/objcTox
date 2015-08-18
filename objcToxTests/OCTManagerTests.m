@@ -36,6 +36,7 @@
 @property (strong, nonatomic, readwrite) OCTSubmanagerUser *user;
 
 @property (strong, nonatomic) OCTRealmManager *realmManager;
+@property (strong, nonatomic) NSNotificationCenter *notificationCenter;
 
 - (id)forwardingTargetForSelector:(SEL)aSelector;
 
@@ -109,6 +110,8 @@
     XCTAssertNotNil(self.manager.configuration);
     XCTAssertNotNil(self.manager.realmManager);
     XCTAssertEqualObjects(self.manager.realmManager.path, self.manager.configuration.fileStorage.pathForDatabase);
+
+    XCTAssertNotNil(self.manager.notificationCenter);
 }
 
 - (void)testBootstrap
@@ -155,6 +158,7 @@
     XCTAssertEqual([self.manager managerGetRealmManager], self.manager.realmManager);
     XCTAssertEqual([self.manager managerGetSettingsStorage], self.manager.configuration.settingsStorage);
     XCTAssertEqual([self.manager managerGetFileStorage], self.manager.configuration.fileStorage);
+    XCTAssertEqual([self.manager managerGetNotificationCenter], self.manager.notificationCenter);
 }
 
 - (void)testForwardTargetForSelector

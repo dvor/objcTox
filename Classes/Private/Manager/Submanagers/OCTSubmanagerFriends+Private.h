@@ -9,6 +9,9 @@
 #import "OCTSubmanagerFriends.h"
 #import "OCTSubmanagerProtocol.h"
 
+/* object: OCTFriend whose status changed; userInfo: nil */
+extern NSString *const kOCTFriendConnectionStatusChangeNotificationName;
+
 @interface OCTSubmanagerFriends (Private) <OCTSubmanagerProtocol>
 
 @end
