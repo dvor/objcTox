@@ -1,5 +1,0 @@
-# .slather.yml
-
-coverage_service: coveralls
-xcodeproj: objcTox.xcodeproj
-source_directory: Classes

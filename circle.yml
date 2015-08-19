@@ -1,0 +1,28 @@
+machine:
+  xcode:
+    version: "6.3.1"
+
+dependencies:
+  pre:
+    - sudo gem install cocoapods -N
+    - brew install uncrustify
+
+test:
+  override:
+    - xctool
+      -workspace objcTox.xcworkspace
+      -scheme objcToxDemo
+      -sdk iphonesimulator
+      CODE_SIGNING_REQUIRED=NO
+      GCC_INSTRUMENT_PROGRAM_FLOW_ARCS=YES
+      GCC_GENERATE_TEST_COVERAGE_FILES=YES
+      clean
+      test
+
+    - ./run-uncrustify.sh --check
+
+deployment:
+  codecov:
+    branch: /.*/
+    commands:
+      - bash <(curl -s https://codecov.io/bash)
