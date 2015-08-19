@@ -140,14 +140,8 @@ static void OCTSetFileError(NSError **errorptr, NSInteger code, NSString *descri
 
 #pragma mark - Private API
 
-- (NSData *)archiveConduit
-{
-    if ([self.conduit conformsToProtocol:@protocol(NSCoding)]) {
-        return [NSKeyedArchiver archivedDataWithRootObject:self.conduit];
-    }
-    else {
-        return nil;
-    }
+- (NSData *)archiveConduit {
+    return nil;
 }
 
 - (void)control:(OCTToxFileControl)ctl
@@ -209,12 +203,7 @@ static void OCTSetFileError(NSError **errorptr, NSInteger code, NSString *descri
 
 - (void)completeFileTransferAndClose
 {
-    [self.conduit transferWillBecomeInactive:self];
-    [self.conduit transferWillComplete:self];
-
-    dispatch_async(dispatch_get_main_queue(), ^{
-        [self.fileManager removeFile:self];
-    });
+    [self stopFileNow];
 }
 
 - (void)sendChunkForSize:(size_t)csize fromPosition:(OCTToxFileSize)p {}
@@ -224,40 +213,14 @@ static void OCTSetFileError(NSError **errorptr, NSInteger code, NSString *descri
 
 - (void)stopFileNow
 {
-    dispatch_async(self.fileManager.queue, ^{
-        if (self.isConduitOpen) {
-            [self.conduit transferWillBecomeInactive:self];
-            self.isConduitOpen = NO;
-        }
-
-        dispatch_async(dispatch_get_main_queue(), ^{
-            [self.fileManager removeFile:self];
-        });
+    dispatch_async(dispatch_get_main_queue(), ^{
+        [self.fileManager removeFile:self];
     });
-}
-
-- (id<OCTFileConduit>)conduit
-{
-    @throw [NSException exceptionWithName:@"OCTFileException" reason:@"Only subclasses of OCTActiveFile can be used." userInfo:nil];
-    return nil;
 }
 
 - (BOOL)openConduitIfNeeded
 {
-    __block BOOL ret = YES;
-    dispatch_sync(self.fileManager.queue, ^{
-        if (! self.isConduitOpen) {
-            ret = [self.conduit transferWillBecomeActive:self];
-
-            if ([self.conduit respondsToSelector:@selector(moveToPosition:)]) {
-                [self.conduit moveToPosition:self.bytesMoved];
-            }
-
-            self.isConduitOpen = ret;
-            return;
-        }
-    });
-    return ret;
+    return NO;
 }
 
 #pragma mark - Public API
@@ -309,6 +272,7 @@ static void OCTSetFileError(NSError **errorptr, NSInteger code, NSString *descri
 @interface OCTActiveFile ()
 @property (assign, atomic) unsigned long lastProgressUpdateTime;
 @property (assign, atomic) BOOL suppressNotifications;
+@property (strong, nonatomic) id<OCTFileConduit> conduit;
 @end
 
 @implementation OCTActiveFile
@@ -368,6 +332,34 @@ static void OCTSetFileError(NSError **errorptr, NSInteger code, NSString *descri
 
 #pragma mark - Overrides
 
+- (NSData *)archiveConduit
+{
+    if ([self.conduit conformsToProtocol:@protocol(NSCoding)]) {
+        return [NSKeyedArchiver archivedDataWithRootObject:self.conduit];
+    }
+    else {
+        return nil;
+    }
+}
+
+- (BOOL)openConduitIfNeeded
+{
+    __block BOOL ret = YES;
+    dispatch_sync(self.fileManager.queue, ^{
+        if (! self.isConduitOpen) {
+            ret = [self.conduit transferWillBecomeActive:self];
+
+            if ([self.conduit respondsToSelector:@selector(moveToPosition:)]) {
+                [self.conduit moveToPosition:self.bytesMoved];
+            }
+
+            self.isConduitOpen = ret;
+            return;
+        }
+    });
+    return ret;
+}
+
 - (void)countBytes:(NSUInteger)bytes
 {
     [super countBytes:bytes];
@@ -399,6 +391,18 @@ static void OCTSetFileError(NSError **errorptr, NSInteger code, NSString *descri
 {
     [super interrupt];
     [self updateState];
+}
+
+- (void)stopFileNow
+{
+    dispatch_async(self.fileManager.queue, ^{
+        if (self.isConduitOpen) {
+            [self.conduit transferWillBecomeInactive:self];
+            self.isConduitOpen = NO;
+        }
+
+        [super stopFileNow];
+    });
 }
 
 #pragma mark - Public API
@@ -484,15 +488,13 @@ static void OCTSetFileError(NSError **errorptr, NSInteger code, NSString *descri
 
 @implementation OCTActiveIncomingFile
 
-- (id<OCTFileConduit>)conduit
-{
-    return self.receiver;
-}
-
 - (void)completeFileTransferAndClose
 {
-    [super completeFileTransferAndClose];
+    [self.conduit transferWillBecomeInactive:self];
+    [self.conduit transferWillComplete:self];
+
     dispatch_async(dispatch_get_main_queue(), ^{
+        [self.fileManager removeFile:self];
         [self markFileAsCompleted:self withFinalDestination:[self.receiver finalDestination]];
     });
 }
@@ -517,15 +519,13 @@ static void OCTSetFileError(NSError **errorptr, NSInteger code, NSString *descri
 
 @implementation OCTActiveOutgoingFile
 
-- (id<OCTFileConduit>)conduit
-{
-    return self.sender;
-}
-
 - (void)completeFileTransferAndClose
 {
-    [super completeFileTransferAndClose];
+    [self.conduit transferWillBecomeInactive:self];
+    [self.conduit transferWillComplete:self];
+
     dispatch_async(dispatch_get_main_queue(), ^{
+        [self.fileManager removeFile:self];
         [self markFileAsCompleted:self withFinalDestination:[self.sender path]];
     });
 }

@@ -27,6 +27,12 @@
 - (void)sendChunkForSize:(size_t)csize fromPosition:(OCTToxFileSize)p;
 - (void)receiveChunkNow:(const uint8_t *)chunk length:(size_t)length atPosition:(OCTToxFileSize)p;
 
+/* Handy subclassing things */
+- (void)resumeControl;
+- (void)pauseControl;
+- (void)cancelControl;
+- (void)stopFileNow;
+
 @end
 
 @interface OCTActiveFile ()
