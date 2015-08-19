@@ -16,6 +16,7 @@
 #import "OCTActiveFile+Variants.h"
 #import "OCTSubmanagerFiles+Private.h"
 #import "OCTSubmanagerAvatars+Private.h"
+#import "OCTSubmanagerFriends+Private.h"
 #import "OCTFileIO+Private.h"
 #import "RBQFetchRequest.h"
 #import "DDLog.h"
@@ -123,6 +124,13 @@ void OCTExceptFileNotInbound(void)
             theObject.fileState = OCTMessageFileStateInterrupted;
         }
     }];
+
+    [[self.dataSource managerGetNotificationCenter] addObserver:self selector:@selector(friendConnectionStatusChange:) name:kOCTFriendConnectionStatusChangeNotificationName object:nil];
+}
+
+- (void)dealloc
+{
+    [[self.dataSource managerGetNotificationCenter] removeObserver:self];
 }
 
 #pragma mark - Public API
@@ -447,11 +455,13 @@ void OCTExceptFileNotInbound(void)
 
 #pragma mark - OCTToxDelegate.
 
-- (void)     tox:(OCTTox *)tox friendConnectionStatusChanged:(OCTToxConnectionStatus)status
-    friendNumber:(OCTToxFriendNumber)friendNumber
+- (void)friendConnectionStatusChange:(NSNotification *)note
 {
+    OCTFriend *friend = note.object;
+    OCTToxConnectionStatus status = friend.connectionStatus;
+
     if (status == OCTToxConnectionStatusNone) {
-        NSArray *files = [self.activeFiles[@(friendNumber)] allValues];
+        NSArray *files = [self.activeFiles[@(friend.friendNumber)] allValues];
         if (! files) {
             return;
         }
