@@ -73,7 +73,7 @@ static NSString *const kFilePathKey = @"filePath";
 
 #pragma mark - OCTFileSending
 
-- (BOOL)transferWillBecomeActive:(nonnull OCTActiveFile *)file
+- (BOOL)transferWillBecomeActive:(nonnull OCTBaseActiveFile *)file
 {
     DDLogDebug(@"Opening %@", self.path);
     return [self openFileIfNeeded];
@@ -110,14 +110,14 @@ static NSString *const kFilePathKey = @"filePath";
     return actual;
 }
 
-- (void)transferWillBecomeInactive:(nonnull OCTActiveFile *)file
+- (void)transferWillBecomeInactive:(nonnull OCTBaseActiveFile *)file
 {
     NSFileHandle *rh = self.readHandle;
     self.readHandle = nil;
     [rh closeFile];
 }
 
-- (void)transferWillComplete:(nonnull OCTActiveFile *)file
+- (void)transferWillComplete:(nonnull OCTBaseActiveFile *)file
 {
     // nothing!
 }

@@ -11,18 +11,30 @@
 
 @class OCTMessageFile;
 
-@interface OCTActiveFile ()
+@interface OCTBaseActiveFile ()
 
-@property (weak, atomic)   OCTSubmanagerFiles *fileManager;
-// Realm identifier
-@property (copy, atomic)   NSString           *fileIdentifier;
-@property (assign, atomic) OCTToxFriendNumber friendNumber;
-@property (assign, atomic) OCTToxFileNumber fileNumber;
-@property (assign, atomic) OCTToxFileSize fileSize;
+@property (assign, readwrite) OCTToxFileSize bytesMoved;
+@property (weak, atomic)      OCTSubmanagerFiles *fileManager;
+@property (assign, atomic)    OCTToxFriendNumber friendNumber;
+@property (assign, atomic)    OCTToxFileNumber fileNumber;
+@property (assign, atomic)    OCTToxFileSize fileSize;
 
 - (NSData *)archiveConduit;
 - (void)control:(OCTToxFileControl)ctl;
+- (void)completeFileTransferAndClose;
 - (void)interrupt;
+
+- (void)sendChunkForSize:(size_t)csize fromPosition:(OCTToxFileSize)p;
+- (void)receiveChunkNow:(const uint8_t *)chunk length:(size_t)length atPosition:(OCTToxFileSize)p;
+
+@end
+
+@interface OCTActiveFile ()
+
+// Realm identifier
+@property (copy, atomic)   NSString           *fileIdentifier;
+
+- (void)updateStateAndChokeFromMessage;
 
 @end
 
@@ -30,16 +42,10 @@
 
 @property (strong, atomic) id<OCTFileSending> sender;
 
-- (void)completeFileTransferAndClose;
-- (void)sendChunkForSize:(size_t)csize fromPosition:(OCTToxFileSize)p;
-
 @end
 
 @interface OCTActiveIncomingFile : OCTActiveFile
 
 @property (strong, atomic) id<OCTFileReceiving> receiver;
-
-- (void)completeFileTransferAndClose;
-- (void)receiveChunkNow:(const uint8_t *)chunk length:(size_t)length atPosition:(OCTToxFileSize)p;
 
 @end

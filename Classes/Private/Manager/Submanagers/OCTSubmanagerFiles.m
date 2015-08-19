@@ -15,6 +15,7 @@
 #import "OCTChat.h"
 #import "OCTActiveFile+Variants.h"
 #import "OCTSubmanagerFiles+Private.h"
+#import "OCTSubmanagerAvatars+Private.h"
 #import "OCTFileIO+Private.h"
 #import "RBQFetchRequest.h"
 #import "DDLog.h"
@@ -161,6 +162,7 @@ void OCTExceptFileNotInbound(void)
     fmsg.fileUsage = type;
     fmsg.pauseFlags = OCTPauseFlagsFriend;
     fmsg.fileTag = [[self.dataSource managerGetTox] fileGetFileIdForFileNumber:n friendNumber:f.friendNumber error:nil];
+    fmsg.fileState = OCTMessageFileStateWaitingConfirmation;
 
     msg.sender = nil;
     msg.chat = chat;
@@ -204,7 +206,7 @@ void OCTExceptFileNotInbound(void)
         return nil;
     }
 
-    OCTActiveIncomingFile *f = (OCTActiveIncomingFile *)[self realActiveFileForMessage:msg];
+    OCTActiveIncomingFile *f = (OCTActiveIncomingFile *)[self activeFileForMessage:msg];
     f.receiver = saver;
     if ([f resumeWithError:error]) {
         return f;
@@ -218,23 +220,13 @@ void OCTExceptFileNotInbound(void)
 {
     NSParameterAssert(file);
 
-    if (file.messageFile.fileState == OCTMessageFileStateWaitingConfirmation) {
-        DDLogWarn(@"warning: activeFileForMessage: is useless when the file's state is WaitingConfirmation. Returning nil");
-        return nil;
-    }
-
-    return [self realActiveFileForMessage:file];
-}
-
-- (nullable OCTActiveFile *)realActiveFileForMessage:(OCTMessageAbstract *)file
-{
     if (file.sender) {
-        return [self activeFileForFriendNumber:file.sender.friendNumber fileNumber:file.messageFile.fileNumber];
+        return (OCTActiveFile *)[self activeFileForFriendNumber:file.sender.friendNumber fileNumber:file.messageFile.fileNumber];
     }
     else {
         // groupchats?
         OCTFriend *friend = [file.chat.friends firstObject];
-        return [self activeFileForFriendNumber:friend.friendNumber fileNumber:file.messageFile.fileNumber];
+        return (OCTActiveFile *)[self activeFileForFriendNumber:friend.friendNumber fileNumber:file.messageFile.fileNumber];
     }
 }
 
@@ -281,7 +273,7 @@ void OCTExceptFileNotInbound(void)
     }];
 }
 
-- (void)setActiveFile:(nullable OCTActiveFile *)file forFriendNumber:(OCTToxFriendNumber)fn fileNumber:(OCTToxFileNumber)filen
+- (void)setActiveFile:(nullable OCTBaseActiveFile *)file forFriendNumber:(OCTToxFriendNumber)fn fileNumber:(OCTToxFileNumber)filen
 {
     NSMutableDictionary *d = self.activeFiles[@(fn)];
     if (! d) {
@@ -297,7 +289,7 @@ void OCTExceptFileNotInbound(void)
     }
 }
 
-- (nullable OCTActiveFile *)activeFileForFriendNumber:(OCTToxFriendNumber)fn fileNumber:(OCTToxFileNumber)file
+- (nullable OCTBaseActiveFile *)activeFileForFriendNumber:(OCTToxFriendNumber)fn fileNumber:(OCTToxFileNumber)file
 {
     return self.activeFiles[@(fn)][@(file)];
 }
@@ -320,13 +312,16 @@ void OCTExceptFileNotInbound(void)
     }
 
     ret.fileManager = self;
+    ret.bytesMoved = msg.filePosition;
     ret.fileIdentifier = msg.uniqueIdentifier;
     ret.fileNumber = msg.fileNumber;
     ret.friendNumber = f.friendNumber;
+
+    [ret updateStateAndChokeFromMessage];
     return ret;
 }
 
-- (void)removeFile:(OCTActiveFile *)file
+- (void)removeFile:(OCTBaseActiveFile *)file
 {
     [self setActiveFile:nil forFriendNumber:file.friendNumber fileNumber:file.fileNumber];
 }
@@ -375,6 +370,7 @@ void OCTExceptFileNotInbound(void)
         msga_.dateInterval = [NSDate date].timeIntervalSince1970;
         msga_.messageFile.fileNumber = n;
         msga_.messageFile.pauseFlags = OCTPauseFlagsFriend;
+        msga_.messageFile.fileState = OCTMessageFileStatePaused;
     }];
 
     OCTActiveFile *outf = [self createActiveFileForFriend:f message:mf provider:sender isOutgoing:YES];
@@ -460,7 +456,7 @@ void OCTExceptFileNotInbound(void)
             return;
         }
 
-        for (OCTActiveFile *f in files) {
+        for (OCTBaseActiveFile *f in files) {
             [f interrupt];
         }
     }
@@ -468,8 +464,9 @@ void OCTExceptFileNotInbound(void)
         RBQFetchRequest *get = [[self.dataSource managerGetRealmManager] fetchRequestForClass:[OCTMessageAbstract class]
                                                                                 withPredicate:[NSPredicate predicateWithFormat:@"messageFile.fileState == %d && sender == nil", OCTMessageFileStateInterrupted]];
         RLMResults *objs = [get fetchObjects];
+        NSMutableArray *staticCopy = [objs valueForKey:@"self"];
 
-        for (OCTMessageAbstract *msga in objs) {
+        for (OCTMessageAbstract *msga in staticCopy) {
             [self tryToResumeFile:msga];
         }
     }
@@ -480,7 +477,7 @@ void OCTExceptFileNotInbound(void)
         position:(OCTToxFileSize)position
           length:(size_t)length
 {
-    OCTActiveOutgoingFile *outboundFile = (OCTActiveOutgoingFile *)[self activeFileForFriendNumber:friendNumber fileNumber:fileNumber];
+    OCTBaseActiveFile *outboundFile = [self activeFileForFriendNumber:friendNumber fileNumber:fileNumber];
 
     if (length == 0) {
         [[self.dataSource managerGetTox] fileSendChunk:NULL forFileNumber:fileNumber friendNumber:friendNumber position:position length:0 error:nil];
@@ -497,7 +494,7 @@ void OCTExceptFileNotInbound(void)
     friendNumber:(OCTToxFriendNumber)friendNumber
         position:(OCTToxFileSize)position
 {
-    OCTActiveIncomingFile *inboundFile = (OCTActiveIncomingFile *)[self activeFileForFriendNumber:friendNumber fileNumber:fileNumber];
+    OCTBaseActiveFile *inboundFile = [self activeFileForFriendNumber:friendNumber fileNumber:fileNumber];
 
     if (length == 0) {
         [inboundFile completeFileTransferAndClose];
@@ -511,7 +508,7 @@ void OCTExceptFileNotInbound(void)
     friendNumber:(OCTToxFriendNumber)friendNumber
       fileNumber:(OCTToxFileNumber)fileNumber
 {
-    OCTActiveFile *f = [self activeFileForFriendNumber:friendNumber fileNumber:fileNumber];
+    OCTBaseActiveFile *f = [self activeFileForFriendNumber:friendNumber fileNumber:fileNumber];
 
     NSAssert(f, @"Anomaly: received a control for which we don't have an OCTActiveFile on record for.");
 
@@ -541,7 +538,9 @@ void OCTExceptFileNotInbound(void)
         return;
     }
 
-    if (kind == OCTToxFileKindAvatar) {}
+    if (kind == OCTToxFileKindAvatar) {
+        [self.dataSource.avatars receiveAvatarForFriend:friendNumber fileNumber:fileNumber fileSize:fileSize];
+    }
     else {
         RBQFetchRequest *get = [[self.dataSource managerGetRealmManager] fetchRequestForClass:[OCTMessageAbstract class]
                                                                                 withPredicate:[NSPredicate predicateWithFormat:@"sender.friendNumber == %d && messageFile.fileState == %d", friendNumber, OCTMessageFileStateInterrupted]];
@@ -572,6 +571,7 @@ void OCTExceptFileNotInbound(void)
         fmsg.pauseFlags = OCTPauseFlagsSelf;
         fmsg.fileTag = tag;
         fmsg.restorationTag = [NSData data];
+        fmsg.fileState = OCTMessageFileStateWaitingConfirmation;
 
         OCTFriend *f = [[self.dataSource managerGetRealmManager] friendWithFriendNumber:friendNumber];
         OCTChat *c = [[self.dataSource managerGetRealmManager] getOrCreateChatWithFriend:f];

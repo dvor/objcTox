@@ -40,17 +40,17 @@
  * Notifies the conduit that it will be imminently used as a data source.
  * This is a good place to open the file and populate fileSize.
  */
-- (BOOL)transferWillBecomeActive:(nonnull OCTActiveFile *)file;
+- (BOOL)transferWillBecomeActive:(nonnull OCTBaseActiveFile *)file;
 /**
  * Notifies the conduit that it will not be seeing activity for an indefinite
  * amount of time.
  * I'll try not to deallocate you before this is called.
  */
-- (void)transferWillBecomeInactive:(nonnull OCTActiveFile *)file;
+- (void)transferWillBecomeInactive:(nonnull OCTBaseActiveFile *)file;
 /**
  * The last chunk has been sent/received
  */
-- (void)transferWillComplete:(nonnull OCTActiveFile *)file;
+- (void)transferWillComplete:(nonnull OCTBaseActiveFile *)file;
 
 /**
  * Whether it is possible to resume the file in its current state.

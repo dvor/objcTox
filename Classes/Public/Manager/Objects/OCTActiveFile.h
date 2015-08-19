@@ -8,15 +8,7 @@
 
 #import <Foundation/Foundation.h>
 
-@class OCTActiveFile;
-
-typedef void (^OCTFileNotificationBlock)(OCTActiveFile *__nonnull);
-
-/**
- * OCTActiveFile is the part of OCTMessageFile not backed by Realm.
- */
-
-@interface OCTActiveFile : NSObject
+@interface OCTBaseActiveFile : NSObject
 
 /**
  * How many bytes have been downloaded/uploaded so far.
@@ -41,6 +33,18 @@ typedef void (^OCTFileNotificationBlock)(OCTActiveFile *__nonnull);
  * Current speed of the file transfer.
  */
 @property (nonatomic, readonly) OCTToxFileSize bytesPerSecond;
+
+@end
+
+@class OCTActiveFile;
+
+typedef void (^OCTFileNotificationBlock)(OCTActiveFile *__nonnull);
+
+/**
+ * OCTActiveFile is the part of OCTMessageFile not backed by Realm.
+ */
+
+@interface OCTActiveFile : OCTBaseActiveFile
 
 /**
  * This block will be called periodically on the main thread when

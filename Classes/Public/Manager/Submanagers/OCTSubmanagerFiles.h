@@ -59,9 +59,8 @@
 /**
  * Get the OCTActiveFile for a file transfer. It can be used to pause/resume/cancel
  * the transfer.
- * To get a file that's WaitingConfirmation, use -saveFileFromMessage:... .
  * @param file An OCTAbstractMessage with a non-null messageFile.
- * @return nil if the file's state is not Paused or Loading, otherwise, an OCTActiveFile.
+ * @return An OCTActiveFile, or nil if one doesn't exist for that message.
  */
 - (nullable OCTActiveFile *)activeFileForMessage:(nonnull OCTMessageAbstract *)file;
 

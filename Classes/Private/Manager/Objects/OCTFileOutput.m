@@ -80,7 +80,7 @@ static NSString *const kFinalPathKey = @"finalPathName";
 
 #pragma mark - <OCTFileConduit>
 
-- (BOOL)transferWillBecomeActive:(nonnull OCTActiveFile *)file
+- (BOOL)transferWillBecomeActive:(nonnull OCTBaseActiveFile *)file
 {
     if (! [[NSFileManager defaultManager] fileExistsAtPath:self.temporaryPathName]) {
         [[NSFileManager defaultManager] createFileAtPath:self.temporaryPathName contents:nil
@@ -101,14 +101,14 @@ static NSString *const kFinalPathKey = @"finalPathName";
     return YES;
 }
 
-- (void)transferWillBecomeInactive:(nonnull OCTActiveFile *)file
+- (void)transferWillBecomeInactive:(nonnull OCTBaseActiveFile *)file
 {
     [self.writeHandle closeFile];
     self.writeHandle = nil;
     DDLogDebug(@"OCTFileOutput %@ closed.", self);
 }
 
-- (void)transferWillComplete:(nonnull OCTActiveFile *)file
+- (void)transferWillComplete:(nonnull OCTBaseActiveFile *)file
 {
     NSError *error = nil;
     BOOL ok = [[NSFileManager defaultManager] moveItemAtPath:self.temporaryPathName toPath:self.finalPathName error:&error];
