@@ -38,6 +38,18 @@ it, simply add the following line to your Podfile:
 2. Install CocoaPods `pod install`
 3. Open `objcTox.xcworkspace` file with Xcode 5+.
 
+Cocoapods 0.38.X for some reason is failing with
+
+```
+[!] The 'Pods-iOSDemo' target has frameworks with conflicting names: vpx.
+```
+
+While it [isn't resolved](https://github.com/Antidote-for-Tox/objcTox/issues/117) you can use oldest version of Cocoapods:
+
+- install it with `sudo gem install cocoapods -v 0.37.2`
+- run by adding version number after `pod` work: `pod _0.37.2_ install`
+- if you like you can remove newest versions of Cocoapods at all: `gem uninstall cocoapods -v '>0.37.2' --force`
+
 ## Contribution
 
 Before contributing please check [style guide](objective-c-style-guide.md).

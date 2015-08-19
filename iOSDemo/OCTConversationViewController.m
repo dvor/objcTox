@@ -1,28 +1,32 @@
 //
-//  OCTChatsViewController.m
+//  OCTConversationViewController.m
 //  objcTox
 //
-//  Created by Dmytro Vorobiov on 22/05/15.
+//  Created by Dmytro Vorobiov on 23.05.15.
 //  Copyright (c) 2015 dvor. All rights reserved.
 //
 
-#import "OCTChatsViewController.h"
+#import <BlocksKit/UIActionSheet+BlocksKit.h>
+#import <BlocksKit/UIAlertView+BlocksKit.h>
+#import <BlocksKit/UIBarButtonItem+BlocksKit.h>
+
 #import "OCTConversationViewController.h"
 #import "RBQFetchedResultsController.h"
 #import "OCTChat.h"
+#import "OCTMessageAbstract.h"
 #import "OCTSubmanagerObjects.h"
+#import "OCTSubmanagerChats.h"
 
-@interface OCTChatsViewController () <RBQFetchedResultsControllerDelegate>
+@interface OCTConversationViewController () <RBQFetchedResultsControllerDelegate>
 
+@property (strong, nonatomic) OCTChat *chat;
 @property (strong, nonatomic) RBQFetchedResultsController *resultsController;
 
 @end
 
-@implementation OCTChatsViewController
+@implementation OCTConversationViewController
 
-#pragma mark -  Lifecycle
-
-- (instancetype)initWithManager:(OCTManager *)manager
+- (instancetype)initWithManager:(OCTManager *)manager chat:(OCTChat *)chat
 {
     self = [super initWithManager:manager];
 
@@ -30,7 +34,10 @@
         return nil;
     }
 
-    RBQFetchRequest *fetchRequest = [self.manager.objects fetchRequestForType:OCTFetchRequestTypeChat withPredicate:nil];
+    _chat = chat;
+
+    NSPredicate *predicate = [NSPredicate predicateWithFormat:@"chat.uniqueIdentifier == %@", chat.uniqueIdentifier];
+    RBQFetchRequest *fetchRequest = [self.manager.objects fetchRequestForType:OCTFetchRequestTypeMessageAbstract withPredicate:predicate];
 
     _resultsController = [[RBQFetchedResultsController alloc] initWithFetchRequest:fetchRequest
                                                                 sectionNameKeyPath:nil
@@ -38,9 +45,21 @@
     _resultsController.delegate = self;
     [_resultsController performFetch];
 
-    self.title = @"Chats";
+    self.title = [NSString stringWithFormat:@"%@", chat.uniqueIdentifier];
 
     return self;
+}
+
+- (void)viewDidLoad
+{
+    [super viewDidLoad];
+
+    __weak OCTConversationViewController *weakSelf = self;
+
+    self.navigationItem.rightBarButtonItem = [[UIBarButtonItem alloc]
+                                              bk_initWithBarButtonSystemItem:UIBarButtonSystemItemAdd handler:^(id handler) {
+        [weakSelf showSendDialog];
+    }];
 }
 
 #pragma mark -  UITableViewDelegate
@@ -48,11 +67,6 @@
 - (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath
 {
     [tableView deselectRowAtIndexPath:indexPath animated:YES];
-
-    OCTChat *chat = [self.resultsController objectAtIndexPath:indexPath];
-
-    OCTConversationViewController *cv = [[OCTConversationViewController alloc] initWithManager:self.manager chat:chat];
-    [self.navigationController pushViewController:cv animated:YES];
 }
 
 #pragma mark -  UITableViewDataSource
@@ -66,16 +80,9 @@
 {
     UITableViewCell *cell = [self cellForIndexPath:indexPath];
 
-    OCTChat *chat = [self.resultsController objectAtIndexPath:indexPath];
+    OCTMessageAbstract *message = [self.resultsController objectAtIndexPath:indexPath];
 
-    cell.textLabel.text = [NSString stringWithFormat:@"Chat\n"
-                           @"uniqueIdentifier %@\n"
-                           @"friends %@\n"
-                           @"enteredText %@\n"
-                           @"lastReadDate %@\n"
-                           @"hasUnreadMessages %d\n"
-                           @"lastMessage: %@",
-                           chat.uniqueIdentifier, chat.friends, chat.enteredText, chat.lastReadDate, [chat hasUnreadMessages], chat.lastMessage];
+    cell.textLabel.text = [message description];
 
     return cell;
 }
@@ -90,20 +97,20 @@
 - (void) controller:(RBQFetchedResultsController *)controller
     didChangeObject:(RBQSafeRealmObject *)anObject
         atIndexPath:(NSIndexPath *)indexPath
-      forChangeType:(NSFetchedResultsChangeType)type
+      forChangeType:(RBQFetchedResultsChangeType)type
        newIndexPath:(NSIndexPath *)newIndexPath
 {
     switch (type) {
-        case NSFetchedResultsChangeInsert:
+        case RBQFetchedResultsChangeInsert:
             [self.tableView insertRowsAtIndexPaths:@[newIndexPath] withRowAnimation:UITableViewRowAnimationAutomatic];
             break;
-        case NSFetchedResultsChangeDelete:
+        case RBQFetchedResultsChangeDelete:
             [self.tableView deleteRowsAtIndexPaths:@[indexPath] withRowAnimation:UITableViewRowAnimationAutomatic];
             break;
-        case NSFetchedResultsChangeUpdate:
+        case RBQFetchedResultsChangeUpdate:
             [self.tableView reloadRowsAtIndexPaths:@[indexPath] withRowAnimation:UITableViewRowAnimationAutomatic];
             break;
-        case NSFetchedResultsChangeMove:
+        case RBQFetchedResultsChangeMove:
             [self.tableView deleteRowsAtIndexPaths:@[indexPath] withRowAnimation:UITableViewRowAnimationAutomatic];
             [self.tableView insertRowsAtIndexPaths:@[newIndexPath] withRowAnimation:UITableViewRowAnimationAutomatic];
             break;
@@ -119,6 +126,38 @@
         [self.resultsController reset];
         [self.tableView reloadData];
     }
+}
+
+#pragma mark -  Private
+
+- (void)showSendDialog
+{
+    __weak OCTConversationViewController *weakSelf = self;
+
+    [self showActionSheet:^(UIActionSheet *sheet) {
+        [sheet bk_addButtonWithTitle:@"Send message" handler:^{
+            [weakSelf sendMessage];
+        }];
+    }];
+}
+
+- (void)sendMessage
+{
+    UIAlertView *alert = [UIAlertView bk_alertViewWithTitle:@"Send friend request" message:nil];
+
+    alert.alertViewStyle = UIAlertViewStylePlainTextInput;
+    UITextField *messageField = [alert textFieldAtIndex:0];
+    messageField.placeholder = @"Message";
+
+    __weak OCTConversationViewController *weakSelf = self;
+    [alert bk_addButtonWithTitle:@"OK" handler:^{
+        [weakSelf.manager.chats sendMessageToChat:weakSelf.chat text:messageField.text type:OCTToxMessageTypeNormal error:nil];
+        [weakSelf.tableView reloadData];
+    }];
+
+    [alert bk_setCancelButtonWithTitle:@"Cancel" handler:nil];
+
+    [alert show];
 }
 
 @end

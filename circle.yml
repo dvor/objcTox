@@ -4,14 +4,17 @@ machine:
 
 dependencies:
   pre:
-    - sudo gem install cocoapods -N
     - brew install uncrustify
+    - sudo gem install cocoapods -N -v 0.37.2
+    - gem uninstall cocoapods -v '>0.37.2' --force || true
 
 test:
   override:
+    - xctool -workspace objcTox.xcworkspace -scheme OSXDemo -sdk macosx10.10 CODE_SIGNING_REQUIRED=NO clean test
+
     - xctool
       -workspace objcTox.xcworkspace
-      -scheme objcToxDemo
+      -scheme iOSDemo
       -sdk iphonesimulator
       CODE_SIGNING_REQUIRED=NO
       GCC_INSTRUMENT_PROGRAM_FLOW_ARCS=YES

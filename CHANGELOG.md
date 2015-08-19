@@ -4,6 +4,7 @@ This project adheres to [Semantic Versioning](http://semver.org/).
 
 ## [Unreleased][unreleased]
 ### Added
+- OS X 10.9+ compatibility
 - OCTSubmanagerBootstrap that implements bootstrapping logic from STS [Tox-STS/#65](https://github.com/Tox/Tox-STS/pull/65/files).
 - Predefined list of nodes to bootstrap from https://wiki.tox.chat/users/nodes.
 

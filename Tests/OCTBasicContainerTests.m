@@ -220,10 +220,6 @@
 
     id theObject = [self.container.array lastObject];
     XCTAssertEqual(object, theObject);
-
-    XCTAssertThrowsSpecificNamed([self.container addObject:nil], NSException, NSInternalInconsistencyException);
-    // trying to add save object twice
-    XCTAssertThrowsSpecificNamed([self.container addObject:object], NSException, NSInternalInconsistencyException);
 }
 
 - (void)testRemoveObject
@@ -234,10 +230,6 @@
     [self.container removeObject:object];
 
     XCTAssertTrue(self.container.array.count == 0);
-
-    XCTAssertThrowsSpecificNamed([self.container removeObject:nil], NSException, NSInternalInconsistencyException);
-    // object not found
-    XCTAssertThrowsSpecificNamed([self.container removeObject:object], NSException, NSInternalInconsistencyException);
 }
 
 - (void)testUpdateObject
@@ -257,20 +249,6 @@
     }];
 
     XCTAssertTrue(blockCalled);
-
-    XCTAssertThrowsSpecificNamed(
-        [self.container updateObjectPassingTest:testBlock updateBlock:nil],
-        NSException,
-        NSInternalInconsistencyException
-    );
-
-    XCTAssertThrowsSpecificNamed(
-        [self.container updateObjectPassingTest:^BOOL (id obj, NSUInteger idx, BOOL *stop) {
-        return NO;
-    } updateBlock:^(id obj) { }],
-        NSException,
-        NSInternalInconsistencyException
-    );
 }
 
 @end

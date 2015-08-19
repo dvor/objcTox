@@ -157,7 +157,7 @@ typedef NS_ENUM(NSUInteger, SectionType) {
 - (void) controller:(RBQFetchedResultsController *)controller
     didChangeObject:(RBQSafeRealmObject *)anObject
         atIndexPath:(NSIndexPath *)indexPath
-      forChangeType:(NSFetchedResultsChangeType)type
+      forChangeType:(RBQFetchedResultsChangeType)type
        newIndexPath:(NSIndexPath *)newIndexPath
 {
     if ([controller isEqual:self.friendResultsController]) {
@@ -170,16 +170,16 @@ typedef NS_ENUM(NSUInteger, SectionType) {
     }
 
     switch (type) {
-        case NSFetchedResultsChangeInsert:
+        case RBQFetchedResultsChangeInsert:
             [self.tableView insertRowsAtIndexPaths:@[newIndexPath] withRowAnimation:UITableViewRowAnimationAutomatic];
             break;
-        case NSFetchedResultsChangeDelete:
+        case RBQFetchedResultsChangeDelete:
             [self.tableView deleteRowsAtIndexPaths:@[indexPath] withRowAnimation:UITableViewRowAnimationAutomatic];
             break;
-        case NSFetchedResultsChangeUpdate:
+        case RBQFetchedResultsChangeUpdate:
             [self.tableView reloadRowsAtIndexPaths:@[indexPath] withRowAnimation:UITableViewRowAnimationAutomatic];
             break;
-        case NSFetchedResultsChangeMove:
+        case RBQFetchedResultsChangeMove:
             [self.tableView deleteRowsAtIndexPaths:@[indexPath] withRowAnimation:UITableViewRowAnimationAutomatic];
             [self.tableView insertRowsAtIndexPaths:@[newIndexPath] withRowAnimation:UITableViewRowAnimationAutomatic];
             break;

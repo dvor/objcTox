@@ -44,7 +44,7 @@ if ! command -v "$UNCRUSTIFY" > /dev/null ; then
     exit 1
 fi
 
-FILES="$(find {Classes,objcToxTests,objcToxDemo} -name '*.h' -or -name '*.m')"
+FILES="$(find {Classes,Tests,iOSDemo,iOSDemoTests,OSXDemo,OSXDemoTests} -name '*.h' -or -name '*.m')"
 
 if [ "$CHECK" = true ] || [ "$APPLY" = true ]; then
     $UNCRUSTIFY -c uncrustify.cfg  -l OC $OPTIONS $FILES

@@ -20,7 +20,6 @@ static NSString *const kuserAvatarFileName = @"user_avatar";
 
 @interface OCTSubmanagerAvatars (Tests)
 
-- (NSData *)pngDataFromImage:(UIImage *)image;
 
 @end
 
