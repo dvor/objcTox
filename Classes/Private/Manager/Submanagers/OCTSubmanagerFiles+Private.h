@@ -16,6 +16,8 @@
 
 - (void)setState:(OCTMessageFileState)state forFile:(OCTActiveFile *)file cleanInternals:(BOOL)clean andRunBlock:(void (^)(OCTMessageFile *theObject))extraBlock;
 - (void)setState:(OCTMessageFileState)state andArchiveConduitForFile:(OCTActiveFile *)file withPauseFlags:(OCTPauseFlags)flag;
+
+- (void)registerFile:(OCTBaseActiveFile *)file;
 - (void)removeFile:(OCTBaseActiveFile *)file;
 
 @end

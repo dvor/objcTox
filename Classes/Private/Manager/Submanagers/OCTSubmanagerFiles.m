@@ -177,7 +177,7 @@ void OCTExceptFileNotInbound(void)
     msg.messageFile = fmsg;
 
     OCTActiveFile *send = [self createActiveFileForFriend:f message:fmsg provider:file isOutgoing:YES];
-    [self setActiveFile:send forFriendNumber:f.friendNumber fileNumber:n];
+    [self registerFile:send];
 
     [[self.dataSource managerGetRealmManager] addObject:msg];
     [[self.dataSource managerGetRealmManager] updateObject:chat withBlock:^(OCTChat *theChat) {
@@ -281,19 +281,23 @@ void OCTExceptFileNotInbound(void)
     }];
 }
 
-- (void)setActiveFile:(nullable OCTBaseActiveFile *)file forFriendNumber:(OCTToxFriendNumber)fn fileNumber:(OCTToxFileNumber)filen
+- (void)registerFile:(nonnull OCTBaseActiveFile *)file
 {
-    NSMutableDictionary *d = self.activeFiles[@(fn)];
+    NSMutableDictionary *d = self.activeFiles[@(file.friendNumber)];
     if (! d) {
         d = [[NSMutableDictionary alloc] init];
-        self.activeFiles[@(fn)] = d;
+        self.activeFiles[@(file.friendNumber)] = d;
     }
 
-    if (file) {
-        d[@(filen)] = file;
-    }
-    else {
-        [d removeObjectForKey:@(filen)];
+    d[@(file.fileNumber)] = file;
+    file.fileManager = self;
+}
+
+- (void)removeFile:(OCTBaseActiveFile *)file
+{
+    NSMutableDictionary *d = self.activeFiles[@(file.friendNumber)];
+    if (d) {
+        [d removeObjectForKey:@(file.fileNumber)];
     }
 }
 
@@ -319,7 +323,6 @@ void OCTExceptFileNotInbound(void)
         ret = inf;
     }
 
-    ret.fileManager = self;
     ret.bytesMoved = msg.filePosition;
     ret.fileIdentifier = msg.uniqueIdentifier;
     ret.fileNumber = msg.fileNumber;
@@ -327,11 +330,6 @@ void OCTExceptFileNotInbound(void)
 
     [ret updateStateAndChokeFromMessage];
     return ret;
-}
-
-- (void)removeFile:(OCTBaseActiveFile *)file
-{
-    [self setActiveFile:nil forFriendNumber:file.friendNumber fileNumber:file.fileNumber];
 }
 
 /* Sending file */
@@ -382,7 +380,7 @@ void OCTExceptFileNotInbound(void)
     }];
 
     OCTActiveFile *outf = [self createActiveFileForFriend:f message:mf provider:sender isOutgoing:YES];
-    [self setActiveFile:outf forFriendNumber:outf.friendNumber fileNumber:n];
+    [self registerFile:outf];
     return YES;
 }
 
@@ -434,7 +432,7 @@ void OCTExceptFileNotInbound(void)
     }];
 
     OCTActiveFile *inf = [self createActiveFileForFriend:msga.sender message:msga.messageFile provider:rcvr isOutgoing:NO];
-    [self setActiveFile:inf forFriendNumber:msga.sender.friendNumber fileNumber:fileNumber];
+    [self registerFile:inf];
     return YES;
 }
 
@@ -589,7 +587,7 @@ void OCTExceptFileNotInbound(void)
         msg.sender = f;
         msg.chat = c;
 
-        [self setActiveFile:[self createActiveFileForFriend:f message:fmsg provider:nil isOutgoing:NO] forFriendNumber:friendNumber fileNumber:fileNumber];
+        [self registerFile:[self createActiveFileForFriend:f message:fmsg provider:nil isOutgoing:NO]];
 
         [[self.dataSource managerGetRealmManager] addObject:msg];
         [[self.dataSource managerGetRealmManager] updateObject:c withBlock:^(OCTChat *theChat) {
