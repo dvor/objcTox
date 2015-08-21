@@ -472,7 +472,7 @@ void OCTExceptFileNotInbound(void)
         RBQFetchRequest *get = [[self.dataSource managerGetRealmManager] fetchRequestForClass:[OCTMessageAbstract class]
                                                                                 withPredicate:[NSPredicate predicateWithFormat:@"messageFile.fileState == %d && sender == nil", OCTMessageFileStateInterrupted]];
         RLMResults *objs = [get fetchObjects];
-        NSMutableArray *staticCopy = [objs valueForKey:@"self"];
+        NSArray *staticCopy = [objs valueForKey:@"self"];
 
         for (OCTMessageAbstract *msga in staticCopy) {
             [self tryToResumeFile:msga];
@@ -546,9 +546,7 @@ void OCTExceptFileNotInbound(void)
         return;
     }
 
-    if (kind == OCTToxFileKindAvatar) {
-        [self.dataSource.avatars receiveAvatarForFriend:friendNumber fileNumber:fileNumber fileSize:fileSize];
-    }
+    if (kind == OCTToxFileKindAvatar) {}
     else {
         RBQFetchRequest *get = [[self.dataSource managerGetRealmManager] fetchRequestForClass:[OCTMessageAbstract class]
                                                                                 withPredicate:[NSPredicate predicateWithFormat:@"sender.friendNumber == %d && messageFile.fileState == %d", friendNumber, OCTMessageFileStateInterrupted]];
