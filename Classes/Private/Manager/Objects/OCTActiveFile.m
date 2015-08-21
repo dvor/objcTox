@@ -140,7 +140,8 @@ static void OCTSetFileError(NSError **errorptr, NSInteger code, NSString *descri
 
 #pragma mark - Private API
 
-- (NSData *)archiveConduit {
+- (NSData *)archiveConduit
+{
     return nil;
 }
 
