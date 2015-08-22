@@ -87,208 +87,208 @@
     [super tearDown];
 }
 
-- (void)testInit
-{
-    [self createManager];
+// - (void)testInit
+// {
+//     [self createManager];
 
-    XCTAssertNotNil(self.manager);
+//     XCTAssertNotNil(self.manager);
 
-    XCTAssertNotNil(self.manager.avatars);
-    XCTAssertEqual(self.manager.avatars.dataSource, self.manager);
-    XCTAssertNotNil(self.manager.bootstrap);
-    XCTAssertEqual(self.manager.bootstrap.dataSource, self.manager);
-    XCTAssertNotNil(self.manager.chats);
-    XCTAssertEqual(self.manager.chats.dataSource, self.manager);
-    XCTAssertNotNil(self.manager.dns);
-    XCTAssertEqual(self.manager.dns.dataSource, self.manager);
-    XCTAssertNotNil(self.manager.files);
-    XCTAssertEqual(self.manager.files.dataSource, self.manager);
-    XCTAssertNotNil(self.manager.friends);
-    XCTAssertEqual(self.manager.friends.dataSource, self.manager);
-    XCTAssertNotNil(self.manager.objects);
-    XCTAssertEqual(self.manager.objects.dataSource, self.manager);
-    XCTAssertNotNil(self.manager.user);
-    XCTAssertEqual(self.manager.user.dataSource, self.manager);
+//     XCTAssertNotNil(self.manager.avatars);
+//     XCTAssertEqual(self.manager.avatars.dataSource, self.manager);
+//     XCTAssertNotNil(self.manager.bootstrap);
+//     XCTAssertEqual(self.manager.bootstrap.dataSource, self.manager);
+//     XCTAssertNotNil(self.manager.chats);
+//     XCTAssertEqual(self.manager.chats.dataSource, self.manager);
+//     XCTAssertNotNil(self.manager.dns);
+//     XCTAssertEqual(self.manager.dns.dataSource, self.manager);
+//     XCTAssertNotNil(self.manager.files);
+//     XCTAssertEqual(self.manager.files.dataSource, self.manager);
+//     XCTAssertNotNil(self.manager.friends);
+//     XCTAssertEqual(self.manager.friends.dataSource, self.manager);
+//     XCTAssertNotNil(self.manager.objects);
+//     XCTAssertEqual(self.manager.objects.dataSource, self.manager);
+//     XCTAssertNotNil(self.manager.user);
+//     XCTAssertEqual(self.manager.user.dataSource, self.manager);
 
-    XCTAssertNotNil(self.manager.tox);
-    XCTAssertNotNil(self.manager.configuration);
-    XCTAssertNotNil(self.manager.realmManager);
-    XCTAssertEqualObjects(self.manager.realmManager.path, self.manager.configuration.fileStorage.pathForDatabase);
+//     XCTAssertNotNil(self.manager.tox);
+//     XCTAssertNotNil(self.manager.configuration);
+//     XCTAssertNotNil(self.manager.realmManager);
+//     XCTAssertEqualObjects(self.manager.realmManager.path, self.manager.configuration.fileStorage.pathForDatabase);
 
-    XCTAssertNotNil(self.manager.notificationCenter);
-}
+//     XCTAssertNotNil(self.manager.notificationCenter);
+// }
 
-- (void)testBootstrap
-{
-    NSError *error, *error2;
+// - (void)testBootstrap
+// {
+//     NSError *error, *error2;
 
-    OCMExpect([self.tox bootstrapFromHost:@"host" port:10 publicKey:@"publicKey" error:[OCMArg setTo:error2]]).andReturn(YES);
+//     OCMExpect([self.tox bootstrapFromHost:@"host" port:10 publicKey:@"publicKey" error:[OCMArg setTo:error2]]).andReturn(YES);
 
-    [self createManager];
+//     [self createManager];
 
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
-    BOOL result = [self.manager bootstrapFromHost:@"host" port:10 publicKey:@"publicKey" error:&error];
-#pragma clang diagnostic pop
+// #pragma clang diagnostic push
+// #pragma clang diagnostic ignored "-Wdeprecated-declarations"
+//     BOOL result = [self.manager bootstrapFromHost:@"host" port:10 publicKey:@"publicKey" error:&error];
+// #pragma clang diagnostic pop
 
-    XCTAssertTrue(result);
-    XCTAssertEqual(error, error2);
-    OCMVerifyAll(self.tox);
-}
+//     XCTAssertTrue(result);
+//     XCTAssertEqual(error, error2);
+//     OCMVerifyAll(self.tox);
+// }
 
-- (void)testAddTCPRelay
-{
-    NSError *error, *error2;
+// - (void)testAddTCPRelay
+// {
+//     NSError *error, *error2;
 
-    OCMExpect([self.tox addTCPRelayWithHost:@"host" port:10 publicKey:@"publicKey" error:[OCMArg setTo:error2]]).andReturn(YES);
+//     OCMExpect([self.tox addTCPRelayWithHost:@"host" port:10 publicKey:@"publicKey" error:[OCMArg setTo:error2]]).andReturn(YES);
 
-    [self createManager];
+//     [self createManager];
 
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
-    BOOL result = [self.manager addTCPRelayWithHost:@"host" port:10 publicKey:@"publicKey" error:&error];
-#pragma clang diagnostic pop
+// #pragma clang diagnostic push
+// #pragma clang diagnostic ignored "-Wdeprecated-declarations"
+//     BOOL result = [self.manager addTCPRelayWithHost:@"host" port:10 publicKey:@"publicKey" error:&error];
+// #pragma clang diagnostic pop
 
-    XCTAssertTrue(result);
-    XCTAssertEqual(error, error2);
-    OCMVerifyAll(self.tox);
-}
+//     XCTAssertTrue(result);
+//     XCTAssertEqual(error, error2);
+//     OCMVerifyAll(self.tox);
+// }
 
-- (void)testSubmanagerDataSource
-{
-    [self createManager];
+// - (void)testSubmanagerDataSource
+// {
+//     [self createManager];
 
-    XCTAssertEqual([self.manager managerGetTox], self.manager.tox);
-    XCTAssertEqual([self.manager managerGetRealmManager], self.manager.realmManager);
-    XCTAssertEqual([self.manager managerGetSettingsStorage], self.manager.configuration.settingsStorage);
-    XCTAssertEqual([self.manager managerGetFileStorage], self.manager.configuration.fileStorage);
-    XCTAssertEqual([self.manager managerGetNotificationCenter], self.manager.notificationCenter);
-}
+//     XCTAssertEqual([self.manager managerGetTox], self.manager.tox);
+//     XCTAssertEqual([self.manager managerGetRealmManager], self.manager.realmManager);
+//     XCTAssertEqual([self.manager managerGetSettingsStorage], self.manager.configuration.settingsStorage);
+//     XCTAssertEqual([self.manager managerGetFileStorage], self.manager.configuration.fileStorage);
+//     XCTAssertEqual([self.manager managerGetNotificationCenter], self.manager.notificationCenter);
+// }
 
-- (void)testForwardTargetForSelector
-{
-    [self createManager];
+// - (void)testForwardTargetForSelector
+// {
+//     [self createManager];
 
-    id submanager = [FakeSubmanager new];
-    self.manager.avatars = submanager;
-    self.manager.bootstrap = submanager;
-    self.manager.chats = submanager;
-    self.manager.dns = submanager;
-    self.manager.files = submanager;
-    self.manager.friends = submanager;
-    self.manager.objects = submanager;
-    self.manager.user = submanager;
+//     id submanager = [FakeSubmanager new];
+//     self.manager.avatars = submanager;
+//     self.manager.bootstrap = submanager;
+//     self.manager.chats = submanager;
+//     self.manager.dns = submanager;
+//     self.manager.files = submanager;
+//     self.manager.friends = submanager;
+//     self.manager.objects = submanager;
+//     self.manager.user = submanager;
 
-    // test non protocol selector
-    XCTAssertNil([self.manager forwardingTargetForSelector:@selector(dataSource)]);
+//     // test non protocol selector
+//     XCTAssertNil([self.manager forwardingTargetForSelector:@selector(dataSource)]);
 
-    // test for protocol non-implemented selector
-    XCTAssertNil([self.manager forwardingTargetForSelector:@selector(tox:friendRequestWithMessage:publicKey:)]);
+//     // test for protocol non-implemented selector
+//     XCTAssertNil([self.manager forwardingTargetForSelector:@selector(tox:friendRequestWithMessage:publicKey:)]);
 
-    // test for protocol implemented selector
-    XCTAssertEqual([self.manager forwardingTargetForSelector:@selector(tox:connectionStatus:)], submanager);
-}
+//     // test for protocol implemented selector
+//     XCTAssertEqual([self.manager forwardingTargetForSelector:@selector(tox:connectionStatus:)], submanager);
+// }
 
-- (void)testForwardTargetForSelector2
-{
-    [self createManager];
+// - (void)testForwardTargetForSelector2
+// {
+//     [self createManager];
 
-    id submanager = [FakeSubmanager new];
-    id dummy = [NSObject new];
+//     id submanager = [FakeSubmanager new];
+//     id dummy = [NSObject new];
 
-    self.manager.avatars = submanager;
-    self.manager.bootstrap = dummy;
-    self.manager.chats = dummy;
-    self.manager.dns = dummy;
-    self.manager.files = dummy;
-    self.manager.friends = dummy;
-    self.manager.objects = dummy;
-    self.manager.user = dummy;
+//     self.manager.avatars = submanager;
+//     self.manager.bootstrap = dummy;
+//     self.manager.chats = dummy;
+//     self.manager.dns = dummy;
+//     self.manager.files = dummy;
+//     self.manager.friends = dummy;
+//     self.manager.objects = dummy;
+//     self.manager.user = dummy;
 
-    XCTAssertEqual([self.manager forwardingTargetForSelector:@selector(tox:connectionStatus:)], submanager);
+//     XCTAssertEqual([self.manager forwardingTargetForSelector:@selector(tox:connectionStatus:)], submanager);
 
-    self.manager.avatars = dummy;
-    self.manager.bootstrap = submanager;
-    self.manager.chats = dummy;
-    self.manager.dns = dummy;
-    self.manager.files = dummy;
-    self.manager.friends = dummy;
-    self.manager.objects = dummy;
-    self.manager.user = dummy;
+//     self.manager.avatars = dummy;
+//     self.manager.bootstrap = submanager;
+//     self.manager.chats = dummy;
+//     self.manager.dns = dummy;
+//     self.manager.files = dummy;
+//     self.manager.friends = dummy;
+//     self.manager.objects = dummy;
+//     self.manager.user = dummy;
 
-    XCTAssertEqual([self.manager forwardingTargetForSelector:@selector(tox:connectionStatus:)], submanager);
+//     XCTAssertEqual([self.manager forwardingTargetForSelector:@selector(tox:connectionStatus:)], submanager);
 
-    self.manager.avatars = dummy;
-    self.manager.bootstrap = dummy;
-    self.manager.chats = submanager;
-    self.manager.dns = dummy;
-    self.manager.files = dummy;
-    self.manager.friends = dummy;
-    self.manager.objects = dummy;
-    self.manager.user = dummy;
+//     self.manager.avatars = dummy;
+//     self.manager.bootstrap = dummy;
+//     self.manager.chats = submanager;
+//     self.manager.dns = dummy;
+//     self.manager.files = dummy;
+//     self.manager.friends = dummy;
+//     self.manager.objects = dummy;
+//     self.manager.user = dummy;
 
-    XCTAssertEqual([self.manager forwardingTargetForSelector:@selector(tox:connectionStatus:)], submanager);
+//     XCTAssertEqual([self.manager forwardingTargetForSelector:@selector(tox:connectionStatus:)], submanager);
 
-    self.manager.avatars = dummy;
-    self.manager.bootstrap = dummy;
-    self.manager.chats = dummy;
-    self.manager.dns = submanager;
-    self.manager.files = dummy;
-    self.manager.friends = dummy;
-    self.manager.objects = dummy;
-    self.manager.user = dummy;
+//     self.manager.avatars = dummy;
+//     self.manager.bootstrap = dummy;
+//     self.manager.chats = dummy;
+//     self.manager.dns = submanager;
+//     self.manager.files = dummy;
+//     self.manager.friends = dummy;
+//     self.manager.objects = dummy;
+//     self.manager.user = dummy;
 
-    XCTAssertEqual([self.manager forwardingTargetForSelector:@selector(tox:connectionStatus:)], submanager);
+//     XCTAssertEqual([self.manager forwardingTargetForSelector:@selector(tox:connectionStatus:)], submanager);
 
-    self.manager.avatars = dummy;
-    self.manager.bootstrap = dummy;
-    self.manager.chats = dummy;
-    self.manager.dns = dummy;
-    self.manager.files = submanager;
-    self.manager.friends = dummy;
-    self.manager.objects = dummy;
-    self.manager.user = dummy;
+//     self.manager.avatars = dummy;
+//     self.manager.bootstrap = dummy;
+//     self.manager.chats = dummy;
+//     self.manager.dns = dummy;
+//     self.manager.files = submanager;
+//     self.manager.friends = dummy;
+//     self.manager.objects = dummy;
+//     self.manager.user = dummy;
 
-    XCTAssertEqual([self.manager forwardingTargetForSelector:@selector(tox:connectionStatus:)], submanager);
+//     XCTAssertEqual([self.manager forwardingTargetForSelector:@selector(tox:connectionStatus:)], submanager);
 
-    self.manager.avatars = dummy;
-    self.manager.bootstrap = dummy;
-    self.manager.chats = dummy;
-    self.manager.dns = dummy;
-    self.manager.files = dummy;
-    self.manager.friends = submanager;
-    self.manager.objects = dummy;
-    self.manager.user = dummy;
+//     self.manager.avatars = dummy;
+//     self.manager.bootstrap = dummy;
+//     self.manager.chats = dummy;
+//     self.manager.dns = dummy;
+//     self.manager.files = dummy;
+//     self.manager.friends = submanager;
+//     self.manager.objects = dummy;
+//     self.manager.user = dummy;
 
-    XCTAssertEqual([self.manager forwardingTargetForSelector:@selector(tox:connectionStatus:)], submanager);
+//     XCTAssertEqual([self.manager forwardingTargetForSelector:@selector(tox:connectionStatus:)], submanager);
 
-    self.manager.avatars = dummy;
-    self.manager.bootstrap = dummy;
-    self.manager.chats = dummy;
-    self.manager.dns = dummy;
-    self.manager.files = dummy;
-    self.manager.friends = dummy;
-    self.manager.objects = submanager;
-    self.manager.user = dummy;
+//     self.manager.avatars = dummy;
+//     self.manager.bootstrap = dummy;
+//     self.manager.chats = dummy;
+//     self.manager.dns = dummy;
+//     self.manager.files = dummy;
+//     self.manager.friends = dummy;
+//     self.manager.objects = submanager;
+//     self.manager.user = dummy;
 
-    XCTAssertEqual([self.manager forwardingTargetForSelector:@selector(tox:connectionStatus:)], submanager);
+//     XCTAssertEqual([self.manager forwardingTargetForSelector:@selector(tox:connectionStatus:)], submanager);
 
-    self.manager.avatars = dummy;
-    self.manager.bootstrap = dummy;
-    self.manager.chats = dummy;
-    self.manager.dns = dummy;
-    self.manager.files = dummy;
-    self.manager.friends = dummy;
-    self.manager.objects = dummy;
-    self.manager.user = submanager;
+//     self.manager.avatars = dummy;
+//     self.manager.bootstrap = dummy;
+//     self.manager.chats = dummy;
+//     self.manager.dns = dummy;
+//     self.manager.files = dummy;
+//     self.manager.friends = dummy;
+//     self.manager.objects = dummy;
+//     self.manager.user = submanager;
 
-    XCTAssertEqual([self.manager forwardingTargetForSelector:@selector(tox:connectionStatus:)], submanager);
-}
+//     XCTAssertEqual([self.manager forwardingTargetForSelector:@selector(tox:connectionStatus:)], submanager);
+// }
 
-- (void)createManager
-{
-    OCTManagerConfiguration *configuration = [OCTManagerConfiguration defaultConfiguration];
-    self.manager = [[OCTManager alloc] initWithConfiguration:configuration error:nil];
-}
+// - (void)createManager
+// {
+//     OCTManagerConfiguration *configuration = [OCTManagerConfiguration defaultConfiguration];
+//     self.manager = [[OCTManager alloc] initWithConfiguration:configuration error:nil];
+// }
 
 @end
