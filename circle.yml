@@ -11,6 +11,7 @@ dependencies:
 test:
   override:
     - xctool -workspace objcTox.xcworkspace -scheme OSXDemo -sdk macosx10.11 CODE_SIGNING_REQUIRED=NO clean test
+    - brew uninstall xctool && brew install --HEAD xctool
 
     - xctool
       -workspace objcTox.xcworkspace
